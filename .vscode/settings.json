@@ -3,5 +3,24 @@
     "source.fixAll": "explicit",
     "source.organizeImports": "explicit",
     "source.sortMembers": "explicit"
+  },
+  // Enable format on save
+  "editor.formatOnSave": true,
+
+  // Make Prettier the default formatter
+  "editor.defaultFormatter": "esbenp.prettier-vscode",
+
+  // (Optional) Only format certain languages with Prettier
+  "[javascript]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode"
+  },
+  "[javascriptreact]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode"
+  },
+  "[typescript]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode"
+  },
+  "[typescriptreact]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode"
   }
 }
