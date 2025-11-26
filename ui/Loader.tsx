@@ -31,7 +31,7 @@ const Loader: FC<Props> = ({ size = 28, color = colors.SECONDARY }) => {
 
   return (
     <Animated.View style={animatedStyle}>
-      <MaterialIcons name="sync" size={size} color={color} />
+      <MaterialIcons name="sync" size={size} color={colors.CONTRAST} />
     </Animated.View>
   );
 };

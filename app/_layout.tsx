@@ -1,27 +1,32 @@
+// app/_layout.tsx
+import { queryClient } from "@/api/query-client";
 import store from "@/store";
 import colors from "@/utils/colors";
 import { Slot } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import React from "react";
-import { StyleSheet, View } from "react-native";
+import { LogBox, StyleSheet } from "react-native";
+import { GestureHandlerRootView } from "react-native-gesture-handler"; // ← AJOUTÉ
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import Toast from "react-native-toast-message";
-import { QueryClient, QueryClientProvider } from "react-query";
+import { QueryClientProvider } from "react-query";
 import { Provider } from "react-redux";
 
-const queryClient = new QueryClient();
+LogBox.ignoreAllLogs(true);
 
 export default function RootLayout() {
   return (
     <Provider store={store}>
       <QueryClientProvider client={queryClient}>
         <SafeAreaProvider>
-          <View style={styles.container}>
-            {/* All screens will appear here */}
+          {/* ← LE WRAP MAGIQUE QUI RÉSOUT TOUT */}
+          <GestureHandlerRootView style={styles.gestureContainer}>
+            <StatusBar style="auto" />
+
             <Slot />
-          </View>
-          <StatusBar style="auto" />
-          <Toast />
+
+            <Toast />
+          </GestureHandlerRootView>
         </SafeAreaProvider>
       </QueryClientProvider>
     </Provider>
@@ -29,8 +34,8 @@ export default function RootLayout() {
 }
 
 const styles = StyleSheet.create({
-  container: {
+  gestureContainer: {
     flex: 1,
-    backgroundColor: colors.PRIMARY, // <-- global background
+    backgroundColor: colors.PRIMARY, // ton fond global
   },
 });

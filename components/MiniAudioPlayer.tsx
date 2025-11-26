@@ -6,7 +6,6 @@ import Loader from "@/ui/Loader";
 import PlayPauseBtn from "@/ui/PlayPauseBtn";
 import colors from "@/utils/colors";
 import { mapRange } from "@/utils/math";
-import { MaterialIcons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import { FC, useState } from "react";
 import { Image, Pressable, StyleSheet, Text, View } from "react-native";
@@ -88,7 +87,7 @@ const MiniAudioPlayer: FC = () => {
         </Pressable>
 
         {/* Bouton favori */}
-        <Pressable
+        {/* <Pressable
           onPress={() => favoriteMutation.mutate(onGoingAudio.id)}
           style={styles.favoriteBtn}
         >
@@ -97,7 +96,7 @@ const MiniAudioPlayer: FC = () => {
             size={28}
             color={isFav ? "#FF3B30" : colors.CONTRAST}
           />
-        </Pressable>
+        </Pressable> */}
 
         {/* Play/Pause */}
         {isBusy ? (
@@ -118,7 +117,7 @@ const MiniAudioPlayer: FC = () => {
         onProfileLinkPress={() => {
           setPlayerVisibility(false);
           // navigation ici si besoin
-          router.push(`/public-profile/${onGoingAudio?.owner?.id}` as any);
+          //router.push(`/public-profile/${onGoingAudio?.owner?.id}` as any);
         }}
       />
 

@@ -95,6 +95,7 @@ const PlaylistAudioModal: FC<Props> = (props) => {
     if (allowPlaylistAudioRemove)
       return (
         <Swipeable
+          key={item.id}
           onSwipeableOpen={() => {
             deleteMutation.mutate({
               id: item.id,
@@ -118,6 +119,7 @@ const PlaylistAudioModal: FC<Props> = (props) => {
     else
       return (
         <AudioListItem
+          key={item.id}
           audio={item}
           isPlaying={onGoingAudio?.id === item.id}
           onPress={() => onAudioPress(item, data?.audios || [])}

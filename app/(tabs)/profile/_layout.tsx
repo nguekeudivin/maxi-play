@@ -45,7 +45,7 @@ export default function ProfileLayout() {
           }}
         />
 
-        <Tabs.Screen
+        {/* <Tabs.Screen
           name="favorites"
           options={{
             title: "Favorites",
@@ -63,7 +63,7 @@ export default function ProfileLayout() {
               <MaterialIcons name="history" color={color} size={size} />
             ),
           }}
-        />
+        /> */}
       </Tabs>
     </Screen>
   );

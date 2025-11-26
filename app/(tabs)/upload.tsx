@@ -1,10 +1,12 @@
 import catchAsyncError from "@/api/catchError";
 import { getClient } from "@/api/client";
 import AudioForm from "@/components/form/AudioForm";
-import Screen from "@/components/Screen";
 import { upldateNotification } from "@/store/notification";
+import colors from "@/utils/colors";
 import { mapRange } from "@/utils/math";
 import { FC, useState } from "react";
+import { StyleSheet } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import Toast from "react-native-toast-message";
 import { useDispatch } from "react-redux";
 
@@ -52,10 +54,20 @@ const Upload: FC = () => {
   };
 
   return (
-    <Screen>
-      <AudioForm onSubmit={handleUpload} busy={busy} progress={progress} />;
-    </Screen>
+    <SafeAreaView style={styles.safeArea} edges={["top", "bottom"]}>
+      <AudioForm onSubmit={handleUpload} busy={busy} progress={progress} />
+    </SafeAreaView>
   );
 };
+
+const styles = StyleSheet.create({
+  safeArea: {
+    flex: 1, // REQUIRED!!!
+    backgroundColor: colors.PRIMARY,
+  },
+  container: {
+    flex: 1,
+  },
+});
 
 export default Upload;
