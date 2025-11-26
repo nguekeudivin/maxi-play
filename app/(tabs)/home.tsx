@@ -9,16 +9,11 @@ import PlaylistForm, { PlaylistInfo } from "@/components/PlaylistForm";
 import PlayListModal from "@/components/PlaylistModal";
 import RecentlyPlayed from "@/components/RecentlyPlayed";
 import RecommendedAudios from "@/components/RecommendedAudios";
-import RecommendedPlaylist from "@/components/RecommendedPlaylist";
 import Screen from "@/components/Screen";
 import { IconSymbol } from "@/components/ui/icon-symbol";
 import { useFetchPlaylist } from "@/hooks/query";
 import useAudioController from "@/hooks/useAudioController";
 import { upldateNotification } from "@/store/notification";
-import {
-  updatePlaylistVisbility,
-  updateSelectedListId,
-} from "@/store/playlistModal";
 import colors from "@/utils/colors";
 import { MaterialIcons } from "@expo/vector-icons";
 import { FC, useState } from "react";
@@ -197,7 +192,7 @@ const Home: FC = () => {
                 onAudioLongPress={handleOnLongPress}
               />
             </View>
-
+            {/* 
             <View style={styles.section}>
               <RecommendedPlaylist
                 onListPress={(playlist) => {
@@ -205,7 +200,7 @@ const Home: FC = () => {
                   dispatch(updatePlaylistVisbility(true));
                 }}
               />
-            </View>
+            </View> */}
           </ScrollView>
 
           {/* Modales */}

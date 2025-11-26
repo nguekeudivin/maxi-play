@@ -41,7 +41,7 @@ const RecommendedPlaylist: FC<Props> = ({ onListPress }) => {
               />
               <View style={styles.overlay}>
                 <Text style={styles.title}>{item.title}</Text>
-                <Text style={styles.title}>{item.itemsCount}</Text>
+                {/* <Text style={styles.title}>{item.itemsCount}</Text> */}
               </View>
             </Pressable>
           );
