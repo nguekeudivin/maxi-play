@@ -41,10 +41,5 @@ export default function Index() {
     fetchAuthInfo();
   }, []);
 
-  return loggedIn ? (
-    <Redirect href="(tabs)" />
-  ) : (
-    // <Redirect href="(auth)/sign-in" />
-    <Redirect href="/home" />
-  );
+  return loggedIn ? <Redirect href="/home" /> : <Redirect href="/sign-in" />;
 }

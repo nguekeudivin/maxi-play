@@ -117,8 +117,8 @@ const SignUp: FC<Props> = (props) => {
           <SubmitBtn title="Sign up" />
 
           <View style={styles.linkContainer}>
-            <AppLink title="I Lost My Password" route="/LostPassword" />
-            <AppLink title="Sign in" route="/SignIn" />
+            <AppLink title="I Lost My Password" route="/lost-password" />
+            <AppLink title="Sign in" route="/sign-in" />
           </View>
         </View>
       </AuthFormContainer>

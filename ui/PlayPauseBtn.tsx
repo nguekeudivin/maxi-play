@@ -1,7 +1,7 @@
-import colors from '@/utils/colors';
-import { AntDesign } from '@react-native-vector-icons/ant-design';
-import { FC } from 'react';
-import { Pressable, StyleSheet } from 'react-native';
+import colors from "@/utils/colors";
+import { MaterialIcons } from "@expo/vector-icons";
+import { FC } from "react";
+import { Pressable, StyleSheet } from "react-native";
 
 interface Props {
   color?: string;
@@ -15,11 +15,11 @@ const PlayPauseBtn: FC<Props> = ({
   onPress,
 }) => {
   return (
-    <Pressable onPress={onPress} style={styles.button}>
+    <Pressable onPress={onPress} style={styles.button} hitSlop={10}>
       {playing ? (
-        <AntDesign name="pause" size={24} color={color} />
+        <MaterialIcons name="pause" size={32} color={color} />
       ) : (
-        <AntDesign name="caretright" size={24} color={color} />
+        <MaterialIcons name="play-arrow" size={32} color={color} />
       )}
     </Pressable>
   );
@@ -29,8 +29,8 @@ const styles = StyleSheet.create({
   button: {
     width: 45,
     height: 45,
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
   },
 });
 

@@ -29,6 +29,7 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     backgroundColor: colors.PRIMARY,
     height: 45,
+    paddingHorizontal: 16,
   },
   title: {
     color: colors.CONTRAST,

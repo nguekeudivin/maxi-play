@@ -11,14 +11,14 @@ interface Props {
 }
 
 const Screen: FC<Props> = ({ children }) => {
-  const { isPalyerReady } = useAudioController();
+  const { isPlayerReady } = useAudioController();
   return (
     <SafeAreaView style={styles.safeArea} edges={["top", "bottom"]}>
-      <View style={styles.container}>
-        <View style={styles.children}>{children}</View>
-        {isPalyerReady ? <MiniAudioPlayer /> : null}
-        <PlaylistAudioModal />
-      </View>
+      <View style={styles.container}>{children}</View>
+
+      {/* Tu mettras ici ton player plus tard, directement dans un View */}
+      {isPlayerReady && <MiniAudioPlayer />}
+      <PlaylistAudioModal />
     </SafeAreaView>
   );
 };
@@ -29,9 +29,6 @@ const styles = StyleSheet.create({
     backgroundColor: colors.PRIMARY,
   },
   container: {
-    flex: 1,
-  },
-  children: {
     flex: 1,
   },
 });

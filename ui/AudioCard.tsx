@@ -1,5 +1,5 @@
-import colors from '@/utils/colors';
-import { FC } from 'react';
+import colors from "@/utils/colors";
+import { FC } from "react";
 import {
   Image,
   Pressable,
@@ -8,8 +8,8 @@ import {
   Text,
   View,
   ViewStyle,
-} from 'react-native';
-import PlayAnimation from './PlayAnimation';
+} from "react-native";
+import PlayAnimation from "./PlayAnimation";
 
 interface Props {
   title: string;
@@ -28,12 +28,13 @@ const AudioCard: FC<Props> = ({
   onPress,
   onLongPress,
 }) => {
-  const source = poster ? {uri: poster} : require('../assets/music.png');
+  const source = poster ? { uri: poster } : require("../assets/music.png");
   return (
     <Pressable
       onPress={onPress}
       onLongPress={onLongPress}
-      style={[styles.container, containerStyle]}>
+      style={[styles.container, containerStyle]}
+    >
       <View style={styles.posterContainer}>
         <Image source={source} style={styles.poster} />
         <PlayAnimation visible={playing} />
@@ -46,17 +47,17 @@ const AudioCard: FC<Props> = ({
 };
 
 const styles = StyleSheet.create({
-  container: {width: 100, marginRight: 15},
+  container: { width: 100, marginRight: 15 },
   posterContainer: {
-    width: '100%',
+    width: "100%",
     aspectRatio: 1,
     borderRadius: 7,
-    overflow: 'hidden',
+    overflow: "hidden",
   },
-  poster: {width: '100%', height: '100%'},
+  poster: { width: "100%", height: "100%" },
   title: {
     color: colors.CONTRAST,
-    fontWeight: '500',
+    fontWeight: "500",
     fontSize: 16,
     marginTop: 5,
   },

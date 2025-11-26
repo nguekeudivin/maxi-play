@@ -3,7 +3,7 @@ import catchAsyncError from "@/api/catchError";
 import { getClient } from "@/api/client";
 import OptionsModal from "@/components/OptionsModal";
 import PlaylistForm from "@/components/PlaylistForm";
-import Screen from "@/components/Screen";
+import Container from "@/components/ui/container";
 import { fetchPlaylist, useFetchPlaylist } from "@/hooks/query";
 import { upldateNotification } from "@/store/notification";
 import {
@@ -125,7 +125,7 @@ const PlaylistTab: FC<Props> = (props) => {
   };
 
   return (
-    <Screen>
+    <Container>
       <PaginatedList
         data={data}
         hasMore={hasMore}
@@ -199,7 +199,7 @@ const PlaylistTab: FC<Props> = (props) => {
           private: selectedPlaylist?.visibility === "private",
         }}
       />
-    </Screen>
+    </Container>
   );
 };
 

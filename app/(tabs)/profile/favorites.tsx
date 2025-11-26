@@ -1,5 +1,5 @@
 import catchAsyncError from "@/api/catchError";
-import Screen from "@/components/Screen";
+import Container from "@/components/ui/container";
 import { fetchFavorites, useFetchFavorite } from "@/hooks/query";
 import useAudioController from "@/hooks/useAudioController";
 import { upldateNotification } from "@/store/notification";
@@ -53,7 +53,7 @@ const FavoriteTab: FC<Props> = (props) => {
   };
 
   return (
-    <Screen>
+    <Container>
       <PaginatedList
         data={data}
         hasMore={hasMore}
@@ -75,7 +75,7 @@ const FavoriteTab: FC<Props> = (props) => {
           );
         }}
       />
-    </Screen>
+    </Container>
   );
 };
 

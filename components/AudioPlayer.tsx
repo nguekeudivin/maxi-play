@@ -1,5 +1,6 @@
+// components/AudioPlayer.tsx
 import useAudioController from "@/hooks/useAudioController";
-import { getPlayerState, updatePlaybackRate } from "@/store/player";
+import { getPlayerState } from "@/store/player";
 import AppLink from "@/ui/AppLink";
 import AppModal from "@/ui/AppModal";
 import Loader from "@/ui/Loader";
@@ -7,14 +8,13 @@ import PlayPauseBtn from "@/ui/PlayPauseBtn";
 import PlaybackRateSelector from "@/ui/PlaybackRateSelector";
 import PlayerControler from "@/ui/PlayerControler";
 import colors from "@/utils/colors";
+import { MaterialCommunityIcons, MaterialIcons } from "@expo/vector-icons";
 import Slider from "@react-native-community/slider";
-import { MaterialDesignIcons } from "@react-native-vector-icons/material-design-icons";
 import formatDuration from "format-duration";
 import { FC, useState } from "react";
 import { Image, Pressable, StyleSheet, Text, View } from "react-native";
-import { useDispatch, useSelector } from "react-redux";
+import { useSelector } from "react-redux";
 import AudioInfoContainer from "./AudioInfoContainer";
-import { IconSymbol } from "./ui/icon-symbol";
 
 interface Props {
   visible: boolean;
@@ -23,161 +23,153 @@ interface Props {
   onProfileLinkPress?(): void;
 }
 
-const fromattedDuration = (duration = 0) => {
-  return formatDuration(duration, {
-    leading: true,
-  });
-};
+const formatTime = (ms = 0) => formatDuration(ms, { leading: true }) || "0:00";
 
 const AudioPlayer: FC<Props> = ({
   visible,
-  onListOptionPress,
   onRequestClose,
+  onListOptionPress,
   onProfileLinkPress,
 }) => {
   const [showAudioInfo, setShowAudioInfo] = useState(false);
-  const { onGoingAudio, playbackRate } = useSelector(getPlayerState);
+
+  const { onGoingAudio, positionMillis, durationMillis, isPlaying, isBusy } =
+    useSelector(getPlayerState);
+
   const {
-    isPalying,
-    isBusy,
-    onNextPress,
-    onPreviousPress,
+    togglePlayPause,
+    onNext: onNextPress,
+    onPrevious: onPreviousPress,
     seekTo,
     skipTo,
-    togglePlayPause,
-    setPlaybackRate,
   } = useAudioController();
+
   const poster = onGoingAudio?.poster;
   const source = poster ? { uri: poster } : require("../assets/music.png");
 
-  const duration = 0;
-  const position = 0;
-
-  const dispatch = useDispatch();
-
-  const handleOnNextPress = async () => {
-    await onNextPress();
-  };
-
-  const handleOnPreviousPress = async () => {
-    await onPreviousPress();
-  };
-
-  const updateSeek = async (value: number) => {
-    await seekTo(value);
-  };
-
-  const handleSkipTo = async (skipType: "forward" | "reverse") => {
-    if (skipType === "forward") await skipTo(10);
-    if (skipType === "reverse") await skipTo(-10);
-  };
-
-  const onPlaybacRatekPress = async (rate: number) => {
-    await setPlaybackRate(rate);
-    dispatch(updatePlaybackRate(rate));
-  };
+  if (!onGoingAudio) return null;
 
   return (
     <AppModal animation visible={visible} onRequestClose={onRequestClose}>
       <View style={styles.container}>
+        {/* Bouton info (ferme le modal et ouvre les infos) */}
         <Pressable
           onPress={() => setShowAudioInfo(true)}
           style={styles.infoBtn}
         >
-          <IconSymbol name="house.fill" color={colors.CONTRAST} size={24} />
+          <MaterialIcons name="info" size={26} color={colors.CONTRAST} />
         </Pressable>
+
         <AudioInfoContainer
           visible={showAudioInfo}
-          closeHandler={setShowAudioInfo}
+          closeHandler={() => setShowAudioInfo(false)}
         />
-        <Image source={source} style={styles.poster} />
-        <View style={styles.contentContainer}>
-          <Text style={styles.title}>{onGoingAudio?.title}</Text>
 
+        {/* Poster */}
+        <Image source={source} style={styles.poster} />
+
+        {/* Titre + artiste */}
+        <View style={styles.contentContainer}>
+          <Text numberOfLines={2} style={styles.title}>
+            {onGoingAudio.title}
+          </Text>
           <AppLink
             onPress={onProfileLinkPress}
-            title={onGoingAudio?.owner.name || ""}
+            title={onGoingAudio.owner.name}
+            //textStyle={styles.artist}
           />
 
+          {/* Temps actuel / durée */}
           <View style={styles.durationContainer}>
-            <Text style={styles.duration}>
-              {fromattedDuration(position * 1000)}
+            <Text style={styles.durationText}>
+              {formatTime(positionMillis)}
             </Text>
-            <Text style={styles.duration}>
-              {fromattedDuration(duration * 1000)}
+            <Text style={styles.durationText}>
+              {formatTime(durationMillis)}
             </Text>
           </View>
 
+          {/* Barre de progression */}
           <Slider
+            style={styles.slider}
             minimumValue={0}
-            maximumValue={duration}
-            minimumTrackTintColor={colors.CONTRAST}
-            maximumTrackTintColor={colors.INACTIVE_CONTRAST}
-            value={position}
-            onSlidingComplete={updateSeek}
+            maximumValue={durationMillis || 1}
+            value={positionMillis}
+            minimumTrackTintColor={colors.SECONDARY}
+            maximumTrackTintColor={colors.INACTIVE_CONTRAST + "60"}
+            thumbTintColor={colors.SECONDARY}
+            onSlidingComplete={seekTo}
           />
 
-          <View style={styles.controles}>
+          {/* Contrôles */}
+          <View style={styles.controls}>
             {/* Previous */}
-            <PlayerControler onPress={handleOnPreviousPress} ignoreContainer>
-              <IconSymbol name="house.fill" size={24} color={colors.CONTRAST} />
+            <PlayerControler onPress={onPreviousPress} ignoreContainer>
+              <MaterialIcons
+                name="skip-previous"
+                size={36}
+                color={colors.CONTRAST}
+              />
             </PlayerControler>
 
-            {/* Skip Time Left */}
-            <PlayerControler
-              onPress={() => handleSkipTo("reverse")}
-              ignoreContainer
-            >
-              <IconSymbol
-                name="house.fill"
-                //name="rotate-left"
-                size={18}
+            {/* -10s */}
+            <PlayerControler onPress={() => skipTo(-10)} ignoreContainer>
+              <MaterialCommunityIcons
+                name="rewind-10"
+                size={30}
                 color={colors.CONTRAST}
               />
               <Text style={styles.skipText}>-10s</Text>
             </PlayerControler>
 
-            {/* Play Pause */}
+            {/* Play / Pause */}
             <PlayerControler>
               {isBusy ? (
-                <Loader color={colors.PRIMARY} />
+                <Loader size={40} color={colors.PRIMARY} />
               ) : (
                 <PlayPauseBtn
-                  playing={isPalying}
+                  playing={isPlaying}
                   onPress={togglePlayPause}
+                  //  size={72}
                   color={colors.PRIMARY}
                 />
               )}
             </PlayerControler>
 
-            {/* Skip Time Right */}
-            <PlayerControler
-              onPress={() => handleSkipTo("forward")}
-              ignoreContainer
-            >
-              <IconSymbol name="house.fill" size={18} color={colors.CONTRAST} />
-
+            {/* +10s */}
+            <PlayerControler onPress={() => skipTo(10)} ignoreContainer>
+              <MaterialCommunityIcons
+                name="fast-forward-10"
+                size={30}
+                color={colors.CONTRAST}
+              />
               <Text style={styles.skipText}>+10s</Text>
             </PlayerControler>
 
             {/* Next */}
-            <PlayerControler onPress={handleOnNextPress} ignoreContainer>
-              <IconSymbol name="house.fill" size={24} color={colors.CONTRAST} />
+            <PlayerControler onPress={onNextPress} ignoreContainer>
+              <MaterialIcons
+                name="skip-next"
+                size={36}
+                color={colors.CONTRAST}
+              />
             </PlayerControler>
           </View>
 
+          {/* Vitesse de lecture */}
           <PlaybackRateSelector
-            onPress={onPlaybacRatekPress}
-            activeRate={playbackRate.toString()}
-            containerStyle={{ marginTop: 20 }}
+            onPress={(rate) => {}}
+            // activeRate={1.0}
+            containerStyle={styles.rateSelector}
           />
 
-          <View style={styles.listOptionBtnContainer}>
+          {/* Bouton playlist */}
+          <View style={styles.listBtnContainer}>
             <PlayerControler onPress={onListOptionPress} ignoreContainer>
-              <MaterialDesignIcons
-                name="playlist-music"
-                size={24}
-                color={colors.CONTRAST}
+              <MaterialCommunityIcons
+                name="playlist-play"
+                size={42}
+                color={colors.SECONDARY}
               />
             </PlayerControler>
           </View>
@@ -191,49 +183,78 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     alignItems: "center",
-    padding: 20,
+    paddingTop: 40,
+  },
+  infoBtn: {
+    position: "absolute",
+    top: 50,
+    right: 20,
+    zIndex: 10,
+    padding: 8,
+    backgroundColor: colors.OVERLAY,
+    borderRadius: 20,
   },
   poster: {
-    width: 200,
-    height: 200,
-    borderRadius: 10,
+    width: 260,
+    height: 260,
+    borderRadius: 16,
+    marginVertical: 30,
+    backgroundColor: colors.OVERLAY,
   },
   contentContainer: {
     width: "100%",
     flex: 1,
-    marginTop: 20,
+    alignItems: "center",
+    paddingHorizontal: 20,
   },
   title: {
-    fontSize: 18,
-    fontWeight: "700",
+    fontSize: 22,
+    fontWeight: "800",
     color: colors.CONTRAST,
+    textAlign: "center",
+    marginBottom: 8,
+  },
+  artist: {
+    fontSize: 16,
+    color: colors.SECONDARY,
+    marginBottom: 20,
   },
   durationContainer: {
+    width: "100%",
     flexDirection: "row",
     justifyContent: "space-between",
-    paddingVertical: 10,
+    paddingHorizontal: 10,
+    marginBottom: 5,
   },
-  duration: {
+  durationText: {
     color: colors.CONTRAST,
+    fontSize: 13,
+    fontVariant: ["tabular-nums"],
   },
-  controles: {
+  slider: {
+    width: "100%",
+    height: 40,
+  },
+  controls: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    marginTop: 20,
+    width: "100%",
+    paddingHorizontal: 10,
+    marginTop: 10,
   },
   skipText: {
-    fontSize: 12,
-    marginTop: 2,
+    fontSize: 11,
     color: colors.CONTRAST,
+    marginTop: 4,
+    fontWeight: "600",
   },
-  infoBtn: {
-    position: "absolute",
-    right: 10,
-    top: 10,
+  rateSelector: {
+    marginTop: 30,
   },
-  listOptionBtnContainer: {
-    alignItems: "flex-end",
+  listBtnContainer: {
+    marginTop: 30,
+    alignItems: "center",
   },
 });
 

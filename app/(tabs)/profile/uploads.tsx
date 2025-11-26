@@ -1,7 +1,7 @@
 import { AudioData } from "@/@types/audio";
 import { ProfileNavigatorStackParamList } from "@/@types/navigation";
 import OptionsModal from "@/components/OptionsModal";
-import Screen from "@/components/Screen";
+import Container from "@/components/ui/container";
 import { useFetchUploadsByProfile } from "@/hooks/query";
 import useAudioController from "@/hooks/useAudioController";
 import { getPlayerState } from "@/store/player";
@@ -45,7 +45,7 @@ const UploadsTab: FC<Props> = (props) => {
   if (!data?.length) return <EmptyRecords title="There is no audio!" />;
 
   return (
-    <Screen>
+    <Container>
       <ScrollView style={styles.container}>
         {data?.map((item) => {
           return (
@@ -87,12 +87,14 @@ const UploadsTab: FC<Props> = (props) => {
           );
         }}
       />
-    </Screen>
+    </Container>
   );
 };
 
 const styles = StyleSheet.create({
-  container: {},
+  container: {
+    backgroundColor: colors.PRIMARY,
+  },
   optionContainer: {
     flexDirection: "row",
     alignItems: "center",

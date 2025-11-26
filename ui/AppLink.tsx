@@ -18,8 +18,8 @@ const AppLink: FC<Props> = ({ route, title, active = true, onPress }) => {
       onPress={
         active
           ? () => {
-              //onPress();
               if (route) router.push(route as any);
+              else if (onPress) onPress();
             }
           : null
       }
@@ -33,6 +33,7 @@ const AppLink: FC<Props> = ({ route, title, active = true, onPress }) => {
 const styles = StyleSheet.create({
   title: {
     color: colors.SECONDARY,
+    fontSize: 18,
   },
 });
 

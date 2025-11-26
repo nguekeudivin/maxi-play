@@ -1,160 +1,141 @@
+// hooks/useAudioController.ts
 import { AudioData } from "@/@types/audio";
+import audioPlayer from "@/store/audioPlayer";
 import {
   getPlayerState,
+  setIsBusy,
+  setIsPlaying,
+  setPlaybackPosition,
   updateOnGoingAudio,
   updateOnGoingList,
 } from "@/store/player";
-import deepEqual from "deep-equal";
-import { Audio } from "expo-av";
-import { useEffect, useRef, useState } from "react";
+import { Audio, AVPlaybackStatus } from "expo-av";
+import { useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
 
 const useAudioController = () => {
-  const soundRef = useRef<Audio.Sound | null>(null);
-
-  const [isPalying, setIsPalying] = useState(false);
-  const [isBusy, setIsBusy] = useState(false);
-
   const dispatch = useDispatch();
-  const { onGoingAudio, onGoingList } = useSelector(getPlayerState);
+  const player = useSelector(getPlayerState);
 
-  // Expo AV is ready immediately
-  const isPalyerReady = true;
+  const onPlaybackStatusUpdate = (status: AVPlaybackStatus) => {
+    if (!status.isLoaded) {
+      dispatch(setIsPlaying(false));
+      return;
+    }
 
-  // -------- Helper: Load & Play a Track -------- //
+    dispatch(setIsPlaying(status.isPlaying));
+    dispatch(
+      setPlaybackPosition({
+        position: status.positionMillis,
+        duration: status.durationMillis || 0,
+      })
+    );
+
+    if (status.didJustFinish) {
+      onNext();
+    }
+  };
+
   const loadAndPlay = async (item: AudioData) => {
-    setIsBusy(true);
+    dispatch(setIsBusy(true));
 
     try {
-      if (soundRef.current) {
-        await soundRef.current.unloadAsync();
-        soundRef.current = null;
-      }
+      await audioPlayer.unload();
 
       const { sound } = await Audio.Sound.createAsync(
         { uri: item.file },
-        { shouldPlay: true }
+        { shouldPlay: true },
+        onPlaybackStatusUpdate
       );
 
-      soundRef.current = sound;
-      setIsPalying(true);
+      audioPlayer.setSound(sound);
       dispatch(updateOnGoingAudio(item));
-    } catch (e) {
-      console.log("Audio load error:", e);
+    } catch (error) {
+      console.error("Load failed:", error);
+    } finally {
+      dispatch(setIsBusy(false));
     }
-
-    setIsBusy(false);
   };
 
-  // -------- Main handler: onAudioPress -------- //
   const onAudioPress = async (item: AudioData, list: AudioData[]) => {
-    const sameList = deepEqual(onGoingList, list);
-    const sameAudio = onGoingAudio?.id === item.id;
+    const isSameAudio = player.onGoingAudio?.id === item.id;
 
-    // First play ever
-    if (!soundRef.current) {
+    if (!audioPlayer.getSound()) {
       dispatch(updateOnGoingList(list));
       return await loadAndPlay(item);
     }
 
-    // Pause same audio
-    if (isPalying && sameAudio) {
-      await soundRef.current.pauseAsync();
-      setIsPalying(false);
+    if (isSameAudio) {
+      if (player.isPlaying) {
+        await audioPlayer.getSound()?.pauseAsync();
+      } else {
+        await audioPlayer.getSound()?.playAsync();
+      }
       return;
     }
 
-    // Resume same audio
-    if (!isPalying && sameAudio) {
-      await soundRef.current.playAsync();
-      setIsPalying(true);
-      return;
-    }
-
-    // New audio inside same list
-    if (sameList && !sameAudio) {
-      return await loadAndPlay(item);
-    }
-
-    // New audio from new list
     dispatch(updateOnGoingList(list));
-    return await loadAndPlay(item);
+    await loadAndPlay(item);
   };
 
-  // -------- Play / Pause toggle -------- //
   const togglePlayPause = async () => {
-    if (!soundRef.current) return;
-
-    if (isPalying) {
-      await soundRef.current.pauseAsync();
-      setIsPalying(false);
+    const sound = audioPlayer.getSound();
+    if (!sound) return;
+    if (player.isPlaying) {
+      await sound.pauseAsync();
     } else {
-      await soundRef.current.playAsync();
-      setIsPalying(true);
+      await sound.playAsync();
     }
   };
 
-  // -------- Seek -------- //
-  const seekTo = async (position: number) => {
-    if (!soundRef.current) return;
-    await soundRef.current.setPositionAsync(position);
-  };
-
-  // -------- Skip forward/backward (seconds) -------- //
-  const skipTo = async (sec: number) => {
-    if (!soundRef.current) return;
-
-    const status = await soundRef.current.getStatusAsync();
-    if (!status.isLoaded) return;
-
-    await soundRef.current.setPositionAsync(status.positionMillis + sec * 1000);
-  };
-
-  // -------- Playback rate -------- //
-  const setPlaybackRate = async (rate: number) => {
-    if (!soundRef.current) return;
-    await soundRef.current.setRateAsync(rate, true);
-  };
-
-  // -------- Next audio -------- //
-  const onNextPress = async () => {
-    if (!onGoingList || !onGoingAudio) return;
-    const index = onGoingList.findIndex((a) => a.id === onGoingAudio.id);
-    const next = onGoingList[index + 1];
-
+  const onNext = async () => {
+    if (!player.onGoingList || !player.onGoingAudio) return;
+    const index = player.onGoingList.findIndex(
+      (a) => a.id === player.onGoingAudio!.id
+    );
+    const next = player.onGoingList[index + 1];
     if (next) await loadAndPlay(next);
   };
 
-  // -------- Previous audio -------- //
-  const onPreviousPress = async () => {
-    if (!onGoingList || !onGoingAudio) return;
-    const index = onGoingList.findIndex((a) => a.id === onGoingAudio.id);
-    const prev = onGoingList[index - 1];
-
+  const onPrevious = async () => {
+    if (!player.onGoingList || !player.onGoingAudio) return;
+    const index = player.onGoingList.findIndex(
+      (a) => a.id === player.onGoingAudio!.id
+    );
+    const prev = player.onGoingList[index - 1];
     if (prev) await loadAndPlay(prev);
   };
 
-  // -------- Cleanup -------- //
+  const seekTo = async (position: number) => {
+    await audioPlayer.getSound()?.setPositionAsync(position);
+  };
+
+  const skipTo = async (seconds: number) => {
+    const sound = audioPlayer.getSound();
+    if (!sound) return;
+    const status = await sound.getStatusAsync();
+    if (status.isLoaded) {
+      const newPos = status.positionMillis + seconds * 1000;
+      await sound.setPositionAsync(Math.max(0, newPos));
+    }
+  };
+
+  // Nettoyage global
   useEffect(() => {
     return () => {
-      if (soundRef.current) {
-        soundRef.current.unloadAsync();
-      }
+      audioPlayer.unload();
     };
   }, []);
 
-  // -------- Return same API as TrackPlayer version -------- //
   return {
     onAudioPress,
-    onNextPress,
-    onPreviousPress,
-    seekTo,
     togglePlayPause,
-    setPlaybackRate,
+    onNext,
+    onPrevious,
+    seekTo,
     skipTo,
-    isBusy,
-    isPalyerReady,
-    isPalying,
+    ...player,
+    isPlayerReady: true,
   };
 };
 

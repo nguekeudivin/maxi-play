@@ -2,8 +2,10 @@ import store from "@/store";
 import colors from "@/utils/colors";
 import { Slot } from "expo-router";
 import { StatusBar } from "expo-status-bar";
+import React from "react";
 import { StyleSheet, View } from "react-native";
 import { SafeAreaProvider } from "react-native-safe-area-context";
+import Toast from "react-native-toast-message";
 import { QueryClient, QueryClientProvider } from "react-query";
 import { Provider } from "react-redux";
 
@@ -19,6 +21,7 @@ export default function RootLayout() {
             <Slot />
           </View>
           <StatusBar style="auto" />
+          <Toast />
         </SafeAreaProvider>
       </QueryClientProvider>
     </Provider>

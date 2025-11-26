@@ -1,6 +1,6 @@
 import { History, historyAudio } from "@/@types/audio";
 import { getClient } from "@/api/client";
-import Screen from "@/components/Screen";
+import Container from "@/components/ui/container";
 import { fetchHistories, useFetchHistories } from "@/hooks/query";
 import AudioListLoadingUI from "@/ui/AudioListLoadingUI";
 import EmptyRecords from "@/ui/EmptyRecords";
@@ -131,7 +131,7 @@ const HistoryTab: FC<Props> = (props) => {
   if (isLoading) return <AudioListLoadingUI />;
 
   return (
-    <Screen>
+    <Container>
       {selectedHistories.length ? (
         <Pressable
           onPress={handleMultipleHistoryRemove}
@@ -187,7 +187,7 @@ const HistoryTab: FC<Props> = (props) => {
         isFetching={isFetchingMore}
         hasMore={hasMore}
       />
-    </Screen>
+    </Container>
   );
 };
 

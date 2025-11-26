@@ -1,9 +1,9 @@
-import { ProfileNavigatorStackParamList } from "@/@types/navigation";
+// components/ReVerificationLink.tsx
 import { getClient } from "@/api/client";
 import { getAuthState } from "@/store/auth";
 import AppLink from "@/ui/AppLink";
 import colors from "@/utils/colors";
-import { NavigationProp, useNavigation } from "@react-navigation/native";
+import { useRouter } from "expo-router";
 import { FC, useEffect, useState } from "react";
 import { StyleSheet, Text, View } from "react-native";
 import { useSelector } from "react-redux";
@@ -21,31 +21,39 @@ const ReVerificationLink: FC<Props> = ({
   time = 60,
   activeAtFirst = false,
 }) => {
-  const [coundDown, setCoundDown] = useState(time);
+  const [countDown, setCountDown] = useState(time);
   const [canSendNewOtpRequest, setCanSendNewOtpRequest] =
     useState(activeAtFirst);
   const { profile } = useSelector(getAuthState);
-  const { navigate } =
-    useNavigation<NavigationProp<ProfileNavigatorStackParamList>>();
+  const router = useRouter();
 
   const requestForOTP = async () => {
-    setCoundDown(60);
+    if (!canSendNewOtpRequest) return;
+
+    setCountDown(60);
     setCanSendNewOtpRequest(false);
+
     try {
       const client = await getClient();
       await client.post("/auth/re-verify-email", {
         userId: userId || profile?.id,
       });
 
-      navigate("Verification", {
-        userInfo: {
-          email: profile?.email || "",
-          name: profile?.name || "",
-          id: userId || profile?.id || "",
+      // Navigation Expo Router vers la page de vérification
+      router.push({
+        pathname: "/(auth)/verification" as any,
+        params: {
+          userInfo: JSON.stringify({
+            email: profile?.email || "",
+            name: profile?.name || "",
+            id: userId || profile?.id || "",
+          }),
         },
       });
     } catch (error) {
-      console.log("Requesting for new otp: ", error);
+      console.warn("Failed to request OTP:", error);
+      // Optionnel : afficher un toast d'erreur
+      setCanSendNewOtpRequest(true); // réactiver en cas d'erreur
     }
   };
 
@@ -53,31 +61,29 @@ const ReVerificationLink: FC<Props> = ({
     if (canSendNewOtpRequest) return;
 
     const intervalId = setInterval(() => {
-      setCoundDown((oldCountDown) => {
-        if (oldCountDown <= 0) {
+      setCountDown((prev) => {
+        if (prev <= 1) {
           setCanSendNewOtpRequest(true);
           clearInterval(intervalId);
-
           return 0;
         }
-        return oldCountDown - 1;
+        return prev - 1;
       });
     }, 1000);
 
-    return () => {
-      clearInterval(intervalId);
-    };
+    return () => clearInterval(intervalId);
   }, [canSendNewOtpRequest]);
 
   return (
     <View style={styles.container}>
-      {coundDown > 0 && !canSendNewOtpRequest ? (
-        <Text style={styles.countDown}>{coundDown} sec</Text>
-      ) : null}
+      {countDown > 0 && !canSendNewOtpRequest && (
+        <Text style={styles.countDown}>{countDown}s</Text>
+      )}
       <AppLink
-        active={canSendNewOtpRequest}
         title={linkTitle}
+        route="/verification"
         onPress={requestForOTP}
+        active={canSendNewOtpRequest}
       />
     </View>
   );
@@ -90,7 +96,8 @@ const styles = StyleSheet.create({
   },
   countDown: {
     color: colors.SECONDARY,
-    marginRight: 7,
+    marginRight: 8,
+    fontWeight: "600",
   },
 });
 

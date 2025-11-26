@@ -79,8 +79,8 @@ const LostPassword: FC<Props> = (props) => {
           <SubmitBtn title="Send link" />
 
           <View style={styles.linkContainer}>
-            <AppLink title="Sign in" route="/SignIn" />
-            <AppLink title="Sign up" route="/SignUp" />
+            <AppLink title="Sign in" route="/sign-in" />
+            <AppLink title="Sign up" route="/sign-up" />
           </View>
         </View>
       </AuthFormContainer>

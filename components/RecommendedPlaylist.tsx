@@ -31,6 +31,7 @@ const RecommendedPlaylist: FC<Props> = ({ onListPress }) => {
         renderItem={({ item }) => {
           return (
             <Pressable
+              key={item.id}
               onPress={() => onListPress(item)}
               style={styles.container}
             >

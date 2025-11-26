@@ -1,10 +1,11 @@
-const PRIMARY = '#443333';
-const SECONDARY = '#EEA849';
-const CONTRAST = '#FFFFFF';
-const INACTIVE_CONTRAST = 'rgba(255, 255, 255, 0.5)';
-const ERROR = '#FF5B14';
-const SUCCESS = '#3BEF1E';
-const OVERLAY = 'rgba(45, 35, 35, 0.5)';
+const PRIMARY = "#14307dff"; // Deep Indigo
+const SECONDARY = "#5590efff"; // Bright Blue
+const CONTRAST = "#F9FAFB"; // Light Grayish White
+const INACTIVE_CONTRAST = "rgba(249, 250, 251, 0.5)"; // Faded Light
+const ERROR = "#EF4444"; // Modern Red
+const ACCENT = "#e60076";
+const SUCCESS = "#10B981"; // Teal Green
+const OVERLAY = "rgba(30, 58, 138, 0.5)"; // Semi-transparent Indigo
 
 const colors = {
   PRIMARY,
@@ -14,6 +15,8 @@ const colors = {
   ERROR,
   SUCCESS,
   OVERLAY,
+  BACKGROUND: PRIMARY,
+  ACCENT,
 };
 
 export default colors;

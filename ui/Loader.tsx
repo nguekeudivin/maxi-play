@@ -1,33 +1,37 @@
-import colors from '@/utils/colors';
-import { AntDesign } from '@react-native-vector-icons/ant-design';
-import { FC, useEffect } from 'react';
+// components/ui/loader.tsx
+import colors from "@/utils/colors";
+import { MaterialIcons } from "@expo/vector-icons";
+import { FC, useEffect } from "react";
 import Animated, {
   useAnimatedStyle,
   useSharedValue,
   withRepeat,
   withTiming,
-} from 'react-native-reanimated';
+} from "react-native-reanimated";
 
 interface Props {
+  size?: number;
   color?: string;
 }
 
-const Loader: FC<Props> = ({color = colors.CONTRAST}) => {
-  const initialRotation = useSharedValue(0);
+const Loader: FC<Props> = ({ size = 28, color = colors.SECONDARY }) => {
+  const rotation = useSharedValue(0);
 
-  const transform = useAnimatedStyle(() => {
-    return {
-      transform: [{rotate: `${initialRotation.value}deg`}],
-    };
-  });
+  const animatedStyle = useAnimatedStyle(() => ({
+    transform: [{ rotate: `${rotation.value}deg` }],
+  }));
 
   useEffect(() => {
-    initialRotation.value = withRepeat(withTiming(360), -1);
-  });
+    rotation.value = withRepeat(
+      withTiming(360, { duration: 1000 }), // 1 tour par seconde
+      -1, // infini
+      false
+    );
+  }, []);
 
   return (
-    <Animated.View style={transform}>
-      <AntDesign name="loading1" size={24} color={color} />
+    <Animated.View style={animatedStyle}>
+      <MaterialIcons name="sync" size={size} color={color} />
     </Animated.View>
   );
 };

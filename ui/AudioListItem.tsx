@@ -1,8 +1,8 @@
-import { AudioData } from '@/@types/audio';
-import colors from '@/utils/colors';
-import { FC } from 'react';
-import { Image, Pressable, StyleSheet, Text, View } from 'react-native';
-import PlayAnimation from './PlayAnimation';
+import { AudioData } from "@/@types/audio";
+import colors from "@/utils/colors";
+import { FC } from "react";
+import { Image, Pressable, StyleSheet, Text, View } from "react-native";
+import PlayAnimation from "./PlayAnimation";
 
 interface Props {
   audio: AudioData;
@@ -18,13 +18,14 @@ const AudioListItem: FC<Props> = ({
   onLongPress,
 }) => {
   const getSource = (poster?: string) => {
-    return poster ? {uri: poster} : require('../assets/music_small.png');
+    return poster ? { uri: poster } : require("../assets/music_small.png");
   };
   return (
     <Pressable
       onLongPress={onLongPress}
       onPress={onPress}
-      style={styles.listItem}>
+      style={styles.listItem}
+    >
       <View>
         <Image source={getSource(audio.poster)} style={styles.poster} />
         <PlayAnimation visible={isPlaying} />
@@ -43,27 +44,29 @@ const AudioListItem: FC<Props> = ({
 
 const styles = StyleSheet.create({
   listItem: {
-    flexDirection: 'row',
+    flexDirection: "row",
     backgroundColor: colors.OVERLAY,
     marginBottom: 15,
     borderRadius: 5,
-    overflow: 'hidden',
+    overflow: "hidden",
   },
   titleContainer: {
     flex: 1,
     padding: 5,
+    paddingLeft: 8,
   },
   poster: {
-    width: 50,
-    height: 50,
+    width: 60,
+    height: 60,
   },
   title: {
     color: colors.CONTRAST,
-    fontWeight: '700',
+    fontWeight: "700",
   },
   owner: {
+    marginTop: 4,
     color: colors.SECONDARY,
-    fontWeight: '700',
+    fontWeight: "700",
   },
 });
 

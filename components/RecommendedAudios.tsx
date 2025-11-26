@@ -1,5 +1,6 @@
 import { AudioData } from "@/@types/audio";
 import { useFetchRecommendedAudios } from "@/hooks/query";
+import useAudioController from "@/hooks/useAudioController";
 import { getPlayerState } from "@/store/player";
 import AudioCard from "@/ui/AudioCard";
 import GridView from "@/ui/GridView";
@@ -18,6 +19,7 @@ const dummyData = new Array(6).fill("");
 const RecommendedAudios: FC<Props> = ({ onAudioLongPress, onAudioPress }) => {
   const { data = [], isLoading } = useFetchRecommendedAudios();
   const { onGoingAudio } = useSelector(getPlayerState);
+  const { isPlaying } = useAudioController();
 
   if (isLoading)
     return (
@@ -51,7 +53,7 @@ const RecommendedAudios: FC<Props> = ({ onAudioLongPress, onAudioPress }) => {
               onPress={() => onAudioPress(item, data)}
               onLongPress={() => onAudioLongPress(item, data)}
               containerStyle={{ width: "100%" }}
-              playing={onGoingAudio?.id === item.id}
+              playing={onGoingAudio?.id === item.id && isPlaying}
             />
           );
         }}

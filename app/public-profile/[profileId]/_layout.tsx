@@ -1,8 +1,9 @@
-import ProfileHeader from "@/components/profile/ProfileHeader";
 import colors from "@/utils/colors";
 import { MaterialIcons } from "@expo/vector-icons";
 import { Tabs } from "expo-router";
 
+import AppHeader from "@/components/AppHeader";
+import PublicProfileHeader from "@/components/profile/PublicProfileHeader";
 import Screen from "@/components/Screen";
 import { StyleSheet, View } from "react-native";
 
@@ -11,7 +12,8 @@ export default function ProfileLayout() {
     <Screen>
       {/* Fixed Header */}
       <View style={styles.header}>
-        <ProfileHeader />
+        <AppHeader title="Profile" />
+        <PublicProfileHeader />;
       </View>
 
       {/* ⭐ Tabs MUST NOT be wrapped in any View */}
@@ -44,26 +46,6 @@ export default function ProfileLayout() {
             ),
           }}
         />
-
-        <Tabs.Screen
-          name="favorites"
-          options={{
-            title: "Favorites",
-            tabBarIcon: ({ color, size }) => (
-              <MaterialIcons name="favorite" color={color} size={size} />
-            ),
-          }}
-        />
-
-        <Tabs.Screen
-          name="history"
-          options={{
-            title: "History",
-            tabBarIcon: ({ color, size }) => (
-              <MaterialIcons name="history" color={color} size={size} />
-            ),
-          }}
-        />
       </Tabs>
     </Screen>
   );
@@ -75,7 +57,7 @@ const styles = StyleSheet.create({
     backgroundColor: colors.PRIMARY,
   },
   header: {
-    height: 100, // adjust to your design
+    height: 200, // adjust to your design
     backgroundColor: colors.PRIMARY,
   },
   tabBar: {

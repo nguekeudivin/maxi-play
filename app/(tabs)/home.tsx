@@ -29,6 +29,7 @@ const Home: FC<Props> = (props) => {
   const [selectedAudio, setSelectedAudio] = useState<AudioData>();
   const [showPlaylistModal, setShowPlaylistModal] = useState(false);
   const [showPlaylistForm, setShowPlaylistForm] = useState(false);
+
   const { onAudioPress } = useAudioController();
 
   const { data } = useFetchPlaylist();

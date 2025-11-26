@@ -1,0 +1,3 @@
+- playing audio correctly
+- public profile
+- auto reload data

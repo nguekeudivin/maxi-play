@@ -1,45 +1,48 @@
-import { HomeNavigatorStackParamList } from "@/@types/navigation";
 import { getClient } from "@/api/client";
 import { useFetchIsFavorite } from "@/hooks/query";
 import useAudioController from "@/hooks/useAudioController";
-import { getAuthState } from "@/store/auth";
 import { getPlayerState } from "@/store/player";
 import Loader from "@/ui/Loader";
 import PlayPauseBtn from "@/ui/PlayPauseBtn";
 import colors from "@/utils/colors";
 import { mapRange } from "@/utils/math";
-import { NavigationProp, useNavigation } from "@react-navigation/native";
+import { MaterialIcons } from "@expo/vector-icons";
+import { useRouter } from "expo-router";
 import { FC, useState } from "react";
 import { Image, Pressable, StyleSheet, Text, View } from "react-native";
 import { useMutation, useQueryClient } from "react-query";
 import { useSelector } from "react-redux";
 import AudioPlayer from "./AudioPlayer";
 import CurrentAudioList from "./CurrentAudioList";
-import { IconSymbol } from "./ui/icon-symbol";
-
-interface Props {}
 
 export const MiniPlayerHeight = 60;
 
-const MiniAudioPlayer: FC<Props> = (props) => {
-  const { onGoingAudio } = useSelector(getPlayerState);
-
-  const { profile } = useSelector(getAuthState);
-  const { isPalying, isBusy, togglePlayPause } = useAudioController();
-  const progress = { duration: 0, position: 0 };
+const MiniAudioPlayer: FC = () => {
+  const { onGoingAudio, positionMillis, durationMillis, isPlaying, isBusy } =
+    useSelector(getPlayerState);
+  const { togglePlayPause } = useAudioController();
+  const router = useRouter();
 
   const [playerVisibility, setPlayerVisibility] = useState(false);
   const [showCurrentList, setShowCurrentList] = useState(false);
 
-  const { navigate } =
-    useNavigation<NavigationProp<HomeNavigatorStackParamList>>();
-
   const { data: isFav } = useFetchIsFavorite(onGoingAudio?.id || "");
+  const queryClient = useQueryClient();
+
+  // Calcul du pourcentage de progression
+  const progressPercentage =
+    durationMillis > 0
+      ? mapRange({
+          inputValue: positionMillis,
+          inputMin: 0,
+          inputMax: durationMillis,
+          outputMin: 0,
+          outputMax: 100,
+        })
+      : 0;
 
   const poster = onGoingAudio?.poster;
   const source = poster ? { uri: poster } : require("../assets/music.png");
-
-  const queryClient = useQueryClient();
 
   const toggleIsFav = async (id: string) => {
     if (!id) return;
@@ -48,127 +51,129 @@ const MiniAudioPlayer: FC<Props> = (props) => {
   };
 
   const favoriteMutation = useMutation({
-    mutationFn: async (id) => toggleIsFav(id),
+    mutationFn: toggleIsFav,
     onMutate: (id: string) => {
       queryClient.setQueryData<boolean>(
         ["favorite", onGoingAudio?.id],
-        (oldData) => !oldData
+        (old) => !old
       );
     },
   });
 
-  const showPlayerModal = () => {
-    setPlayerVisibility(true);
-  };
-
-  const closePlayerModal = () => {
-    setPlayerVisibility(false);
-  };
-
-  const handleOnCurrentListClose = () => {
-    setShowCurrentList(false);
-  };
-
-  const handleOnListOptionPress = () => {
-    closePlayerModal();
-    setShowCurrentList(true);
-  };
-
-  const handleOnProfileLinkPress = () => {
-    closePlayerModal();
-    if (profile?.id === onGoingAudio?.owner.id) {
-      navigate("Profile");
-    } else {
-      navigate("PublicProfile", {
-        profileId: onGoingAudio?.owner.id || "",
-      });
-    }
-  };
+  if (!onGoingAudio) return null;
 
   return (
     <>
-      <View
-        style={{
-          height: 2,
-          backgroundColor: colors.SECONDARY,
-          width: `${mapRange({
-            outputMin: 0,
-            outputMax: 100,
-            inputMin: 0,
-            inputMax: progress.duration,
-            inputValue: progress.position,
-          })}%`,
-        }}
-      />
+      {/* Barre de progression fine en haut */}
+      <View style={styles.progressContainer}>
+        <View
+          style={[styles.progressBar, { width: `${progressPercentage}%` }]}
+        />
+      </View>
+
+      {/* Mini player */}
       <View style={styles.container}>
         <Image source={source} style={styles.poster} />
 
-        <Pressable onPress={showPlayerModal} style={styles.contentContainer}>
-          <Text style={styles.title}>{onGoingAudio?.title}</Text>
-          <Text style={styles.name}>{onGoingAudio?.owner.name}</Text>
+        <Pressable
+          onPress={() => setPlayerVisibility(true)}
+          style={styles.contentContainer}
+        >
+          <Text numberOfLines={1} style={styles.title}>
+            {onGoingAudio.title}
+          </Text>
+          <Text numberOfLines={1} style={styles.name}>
+            {onGoingAudio.owner.name}
+          </Text>
         </Pressable>
 
+        {/* Bouton favori */}
         <Pressable
-          onPress={() => favoriteMutation.mutate(onGoingAudio?.id || "")}
-          style={{ paddingHorizontal: 10 }}
+          onPress={() => favoriteMutation.mutate(onGoingAudio.id)}
+          style={styles.favoriteBtn}
         >
-          <IconSymbol
-            //name={isFav ? "heart" : "hearto"}
-            name="house.fill"
-            size={24}
-            color={colors.CONTRAST}
+          <MaterialIcons
+            name={isFav ? "favorite" : "favorite-border"}
+            size={28}
+            color={isFav ? "#FF3B30" : colors.CONTRAST}
           />
         </Pressable>
 
+        {/* Play/Pause */}
         {isBusy ? (
-          <Loader />
+          <Loader size={32} color={colors.SECONDARY} />
         ) : (
-          <PlayPauseBtn playing={isPalying} onPress={togglePlayPause} />
+          <PlayPauseBtn playing={isPlaying} onPress={togglePlayPause} />
         )}
       </View>
 
+      {/* Full player modal */}
       <AudioPlayer
         visible={playerVisibility}
-        onRequestClose={closePlayerModal}
-        onListOptionPress={handleOnListOptionPress}
-        onProfileLinkPress={handleOnProfileLinkPress}
+        onRequestClose={() => setPlayerVisibility(false)}
+        onListOptionPress={() => {
+          setPlayerVisibility(false);
+          setShowCurrentList(true);
+        }}
+        onProfileLinkPress={() => {
+          setPlayerVisibility(false);
+          // navigation ici si besoin
+          router.push(`/public-profile/${onGoingAudio?.owner?.id}` as any);
+        }}
       />
+
       <CurrentAudioList
         visible={showCurrentList}
-        onRequestClose={handleOnCurrentListClose}
+        onRequestClose={() => setShowCurrentList(false)}
       />
     </>
   );
 };
 
 const styles = StyleSheet.create({
+  progressContainer: {
+    height: 2.5,
+    width: "100%",
+    backgroundColor: colors.INACTIVE_CONTRAST + "40",
+  },
+  progressBar: {
+    height: "100%",
+    backgroundColor: colors.ACCENT,
+    borderRadius: 2,
+  },
   container: {
     width: "100%",
     height: MiniPlayerHeight,
     backgroundColor: colors.PRIMARY,
-    padding: 5,
+    paddingHorizontal: 10,
     flexDirection: "row",
     alignItems: "center",
+    borderTopWidth: 0.5,
+    borderTopColor: colors.INACTIVE_CONTRAST + "30",
+  },
+  poster: {
+    height: MiniPlayerHeight - 16,
+    width: MiniPlayerHeight - 16,
+    borderRadius: 8,
+    backgroundColor: colors.OVERLAY,
   },
   contentContainer: {
     flex: 1,
-    height: "100%",
-    padding: 5,
-  },
-  poster: {
-    height: MiniPlayerHeight - 10,
-    width: MiniPlayerHeight - 10,
-    borderRadius: 5,
+    paddingHorizontal: 12,
+    justifyContent: "center",
   },
   title: {
     color: colors.CONTRAST,
     fontWeight: "700",
-    paddingHorizontal: 5,
+    fontSize: 15,
   },
   name: {
     color: colors.SECONDARY,
-    fontWeight: "700",
-    paddingHorizontal: 5,
+    fontSize: 13,
+    marginTop: 2,
+  },
+  favoriteBtn: {
+    padding: 8,
   },
 });
 
