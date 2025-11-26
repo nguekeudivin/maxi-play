@@ -21,6 +21,7 @@ import {
   MaterialIcons,
 } from "@expo/vector-icons";
 import * as ImagePicker from "expo-image-picker";
+import { useRouter } from "expo-router";
 import { FC, useEffect, useState } from "react";
 import {
   Alert,
@@ -44,6 +45,7 @@ const ProfileSettings: FC = () => {
   const dispatch = useDispatch();
   const { profile } = useSelector(getAuthState);
   const queryClient = useQueryClient();
+  const router = useRouter();
 
   // Comparaison simple et efficace (plus besoin de deep-equal)
   const isSame =
@@ -61,6 +63,7 @@ const ProfileSettings: FC = () => {
       const msg = catchAsyncError(error);
       dispatch(upldateNotification({ message: msg, type: "error" }));
     } finally {
+      router.push("/sign-in");
       dispatch(updateBusyState(false));
     }
   };
