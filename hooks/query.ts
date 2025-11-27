@@ -1,177 +1,179 @@
-import { AudioData, CompletePlaylist, History, Playlist } from '@/@types/audio';
-import catchAsyncError from '@/api/catchError';
-import { getClient } from '@/api/client';
-import { upldateNotification } from '@/store/notification';
-import { useQuery } from 'react-query';
-import { useDispatch } from 'react-redux';
+import { AudioData, CompletePlaylist, History, Playlist } from "@/@types/audio";
+import catchAsyncError from "@/api/catchError";
+import { getClient } from "@/api/client";
+import { upldateNotification } from "@/store/notification";
+import { useQuery } from "react-query";
+import { useDispatch } from "react-redux";
 
 const fetchLatest = async (): Promise<AudioData[]> => {
   const client = await getClient();
-  const {data} = await client('/audio/latest');
+  const { data } = await client("/audio/latest");
   return data.audios;
 };
 
 export const useFetchLatestAudios = () => {
   const dispatch = useDispatch();
-  return useQuery(['latest-uploads'], {
+  return useQuery(["latest-uploads"], {
     queryFn: () => fetchLatest(),
     onError(err) {
       const errorMessage = catchAsyncError(err);
-      dispatch(upldateNotification({message: errorMessage, type: 'error'}));
+      dispatch(upldateNotification({ message: errorMessage, type: "error" }));
     },
   });
 };
 
 const fetchRecommended = async (): Promise<AudioData[]> => {
   const client = await getClient();
-  const {data} = await client('/profile/recommended');
+  const { data } = await client("/profile/recommended");
   return data.audios;
 };
 
 export const useFetchRecommendedAudios = () => {
   const dispatch = useDispatch();
-  return useQuery(['recommended'], {
+  return useQuery(["recommended"], {
     queryFn: () => fetchRecommended(),
     onError(err) {
       const errorMessage = catchAsyncError(err);
-      dispatch(upldateNotification({message: errorMessage, type: 'error'}));
+      dispatch(upldateNotification({ message: errorMessage, type: "error" }));
     },
   });
 };
 
 export const fetchPlaylist = async (pageNo = 0): Promise<Playlist[]> => {
   const client = await getClient();
-  const {data} = await client('/playlist/by-profile?limit=10&pageNo=' + pageNo);
+  const { data } = await client(
+    "/playlist/by-profile?limit=10&pageNo=" + pageNo
+  );
   return data.playlist;
 };
 
 export const useFetchPlaylist = () => {
   const dispatch = useDispatch();
-  return useQuery(['playlist'], {
+  return useQuery(["playlist"], {
     queryFn: () => fetchPlaylist(),
     onError(err) {
       const errorMessage = catchAsyncError(err);
-      dispatch(upldateNotification({message: errorMessage, type: 'error'}));
+      dispatch(upldateNotification({ message: errorMessage, type: "error" }));
     },
   });
 };
 
 const fetchUploadsByProfile = async (): Promise<AudioData[]> => {
   const client = await getClient();
-  const {data} = await client('/profile/uploads');
+  const { data } = await client("/profile/uploads");
   return data.audios;
 };
 
 export const useFetchUploadsByProfile = () => {
   const dispatch = useDispatch();
-  return useQuery(['uploads-by-profile'], {
+  return useQuery(["uploads-by-profile"], {
     queryFn: () => fetchUploadsByProfile(),
     onError(err) {
       const errorMessage = catchAsyncError(err);
-      dispatch(upldateNotification({message: errorMessage, type: 'error'}));
+      dispatch(upldateNotification({ message: errorMessage, type: "error" }));
     },
   });
 };
 
 export const fetchFavorites = async (pageNo = 0): Promise<AudioData[]> => {
   const client = await getClient();
-  const {data} = await client('/favorite?pageNo=' + pageNo);
-  return data.audios;
+  const { data } = await client("/favorite?pageNo=" + pageNo);
+  return data.audio;
 };
 
 export const useFetchFavorite = () => {
   const dispatch = useDispatch();
-  return useQuery(['favorite'], {
+  return useQuery(["favorite"], {
     queryFn: () => fetchFavorites(),
     onError(err) {
       const errorMessage = catchAsyncError(err);
-      dispatch(upldateNotification({message: errorMessage, type: 'error'}));
+      dispatch(upldateNotification({ message: errorMessage, type: "error" }));
     },
   });
 };
 
 export const fetchHistories = async (pageNo = 0): Promise<History[]> => {
   const client = await getClient();
-  const {data} = await client('/history?limit=15&pageNo=' + pageNo);
+  const { data } = await client("/history?limit=15&pageNo=" + pageNo);
   return data.histories;
 };
 
 export const useFetchHistories = () => {
   const dispatch = useDispatch();
-  return useQuery(['histories'], {
+  return useQuery(["histories"], {
     queryFn: () => fetchHistories(),
     onError(err) {
       const errorMessage = catchAsyncError(err);
-      dispatch(upldateNotification({message: errorMessage, type: 'error'}));
+      dispatch(upldateNotification({ message: errorMessage, type: "error" }));
     },
   });
 };
 
 const fetchRecentlyPlayed = async (): Promise<AudioData[]> => {
   const client = await getClient();
-  const {data} = await client('/history/recently-played');
+  const { data } = await client("/history/recently-played");
   return data.audios;
 };
 
 export const useFetchRecentlyPlayed = () => {
   const dispatch = useDispatch();
-  return useQuery(['recently-played'], {
+  return useQuery(["recently-played"], {
     queryFn: () => fetchRecentlyPlayed(),
     onError(err) {
       const errorMessage = catchAsyncError(err);
-      dispatch(upldateNotification({message: errorMessage, type: 'error'}));
+      dispatch(upldateNotification({ message: errorMessage, type: "error" }));
     },
   });
 };
 
 const fetchRecommendedPlaylist = async (): Promise<Playlist[]> => {
   const client = await getClient();
-  const {data} = await client('/profile/auto-generated-playlist');
+  const { data } = await client("/profile/auto-generated-playlist");
   return data.playlist;
 };
 
 export const useFetchRecommendedPlaylist = () => {
   const dispatch = useDispatch();
-  return useQuery(['recommended-playlist'], {
+  return useQuery(["recommended-playlist"], {
     queryFn: () => fetchRecommendedPlaylist(),
     onError(err) {
       const errorMessage = catchAsyncError(err);
-      dispatch(upldateNotification({message: errorMessage, type: 'error'}));
+      dispatch(upldateNotification({ message: errorMessage, type: "error" }));
     },
   });
 };
 
 const fetchIsFavorite = async (id: string): Promise<boolean> => {
   const client = await getClient();
-  const {data} = await client('/favorite/is-fav?audioId=' + id);
+  const { data } = await client("/favorite/is-fav?audioId=" + id);
   return data.result;
 };
 
 export const useFetchIsFavorite = (id: string) => {
   const dispatch = useDispatch();
-  return useQuery(['favorite', id], {
+  return useQuery(["favorite", id], {
     queryFn: () => fetchIsFavorite(id),
     onError(err) {
       const errorMessage = catchAsyncError(err);
-      dispatch(upldateNotification({message: errorMessage, type: 'error'}));
+      dispatch(upldateNotification({ message: errorMessage, type: "error" }));
     },
     enabled: id ? true : false,
   });
 };
 
-const fetchPublicProfile = async (id: string): Promise<PublicProfile> => {
+const fetchPublicProfile = async (id: string): Promise<any> => {
   const client = await getClient();
-  const {data} = await client('/profile/info/' + id);
+  const { data } = await client("/profile/info/" + id);
   return data.profile;
 };
 
 export const useFetchPublicProfile = (id: string) => {
   const dispatch = useDispatch();
-  return useQuery(['profile', id], {
+  return useQuery(["profile", id], {
     queryFn: () => fetchPublicProfile(id),
     onError(err) {
       const errorMessage = catchAsyncError(err);
-      dispatch(upldateNotification({message: errorMessage, type: 'error'}));
+      dispatch(upldateNotification({ message: errorMessage, type: "error" }));
     },
     enabled: id ? true : false,
   });
@@ -179,17 +181,17 @@ export const useFetchPublicProfile = (id: string) => {
 
 const fetchPublicUploads = async (id: string): Promise<AudioData[]> => {
   const client = await getClient();
-  const {data} = await client('/profile/uploads/' + id);
+  const { data } = await client("/profile/uploads/" + id);
   return data.audios;
 };
 
 export const useFetchPublicUploads = (id: string) => {
   const dispatch = useDispatch();
-  return useQuery(['uploads', id], {
+  return useQuery(["uploads", id], {
     queryFn: () => fetchPublicUploads(id),
     onError(err) {
       const errorMessage = catchAsyncError(err);
-      dispatch(upldateNotification({message: errorMessage, type: 'error'}));
+      dispatch(upldateNotification({ message: errorMessage, type: "error" }));
     },
     enabled: id ? true : false,
   });
@@ -197,17 +199,17 @@ export const useFetchPublicUploads = (id: string) => {
 
 const fetchPublicPlaylist = async (id: string): Promise<Playlist[]> => {
   const client = await getClient();
-  const {data} = await client('/profile/playlist/' + id);
+  const { data } = await client("/profile/playlist/" + id);
   return data.playlist;
 };
 
 export const useFetchPublicPlaylist = (id: string) => {
   const dispatch = useDispatch();
-  return useQuery(['playlist', id], {
+  return useQuery(["playlist", id], {
     queryFn: () => fetchPublicPlaylist(id),
     onError(err) {
       const errorMessage = catchAsyncError(err);
-      dispatch(upldateNotification({message: errorMessage, type: 'error'}));
+      dispatch(upldateNotification({ message: errorMessage, type: "error" }));
     },
     enabled: id ? true : false,
   });
@@ -215,23 +217,23 @@ export const useFetchPublicPlaylist = (id: string) => {
 
 const fetchPlaylistAudios = async (
   id: string,
-  isPrivate: boolean,
+  isPrivate: boolean
 ): Promise<CompletePlaylist> => {
   const endpoint = isPrivate
-    ? '/profile/private-playlist-audios/' + id
-    : '/profile/playlist-audios/' + id;
+    ? "/profile/private-playlist-audios/" + id
+    : "/profile/playlist-audios/" + id;
   const client = await getClient();
-  const {data} = await client(endpoint);
+  const { data } = await client(endpoint);
   return data.list;
 };
 
 export const useFetchPlaylistAudios = (id: string, isPrivate: boolean) => {
   const dispatch = useDispatch();
-  return useQuery(['playlist-audios', id], {
+  return useQuery(["playlist-audios", id], {
     queryFn: () => fetchPlaylistAudios(id, isPrivate),
     onError(err) {
       const errorMessage = catchAsyncError(err);
-      dispatch(upldateNotification({message: errorMessage, type: 'error'}));
+      dispatch(upldateNotification({ message: errorMessage, type: "error" }));
     },
     enabled: id ? true : false,
   });
@@ -239,17 +241,17 @@ export const useFetchPlaylistAudios = (id: string, isPrivate: boolean) => {
 
 const fetchIsFollowing = async (id: string): Promise<boolean> => {
   const client = await getClient();
-  const {data} = await client('/profile/is-following/' + id);
+  const { data } = await client("/profile/is-following/" + id);
   return data.status;
 };
 
 export const useFetchIsFollowing = (id: string) => {
   const dispatch = useDispatch();
-  return useQuery(['is-following', id], {
+  return useQuery(["is-following", id], {
     queryFn: () => fetchIsFollowing(id),
     onError(err) {
       const errorMessage = catchAsyncError(err);
-      dispatch(upldateNotification({message: errorMessage, type: 'error'}));
+      dispatch(upldateNotification({ message: errorMessage, type: "error" }));
     },
     enabled: id ? true : false,
   });

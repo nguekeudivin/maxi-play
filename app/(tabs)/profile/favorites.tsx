@@ -1,56 +1,49 @@
-import catchAsyncError from "@/api/catchError";
+import { getClient } from "@/api/client";
 import Container from "@/components/ui/container";
-import { fetchFavorites, useFetchFavorite } from "@/hooks/query";
 import useAudioController from "@/hooks/useAudioController";
-import { upldateNotification } from "@/store/notification";
 import { getPlayerState } from "@/store/player";
 import AudioListItem from "@/ui/AudioListItem";
 import AudioListLoadingUI from "@/ui/AudioListLoadingUI";
 import EmptyRecords from "@/ui/EmptyRecords";
 import PaginatedList from "@/ui/PaginatedList";
-import { FC, useState } from "react";
+import { useFocusEffect } from "expo-router";
+import { FC, useCallback, useEffect, useState } from "react";
 import { StyleSheet } from "react-native";
-import { useQueryClient } from "react-query";
-import { useDispatch, useSelector } from "react-redux";
+import { useSelector } from "react-redux";
 
 interface Props {}
-let pageNo = 0;
+// let pageNo = 0;
 const FavoriteTab: FC<Props> = (props) => {
   const { onGoingAudio } = useSelector(getPlayerState);
   const { onAudioPress } = useAudioController();
-  const { data = [], isLoading, isFetching } = useFetchFavorite();
   const [hasMore, setHasMore] = useState(true);
   const [isFetchingMore, setIsFetchingMore] = useState(false);
-  const queryClient = useQueryClient();
 
-  const dispatch = useDispatch();
+  const [data, setData] = useState<any[]>([]);
+  const [isLoading, setIsLoading] = useState<boolean>(false);
+  const [isFetching, setIsFetching] = useState<boolean>(false);
+
+  const fetch = async () => {
+    const client = await getClient();
+    const { data } = await client("/favorite");
+    setData(data.audio);
+    //return data.audios;
+  };
+
+  const handleOnEndReached = () => {};
+  const handleOnRefresh = () => {};
+
+  useFocusEffect(
+    useCallback(() => {
+      fetch();
+    }, [])
+  );
+
+  useEffect(() => {
+    fetch();
+  }, []);
 
   if (isLoading) return <AudioListLoadingUI />;
-
-  const handleOnEndReached = async () => {
-    setIsFetchingMore(true);
-    try {
-      if (!data) return;
-      pageNo += 1;
-      const audios = await fetchFavorites(pageNo);
-      if (!audios || !audios.length) {
-        setHasMore(false);
-      }
-
-      const newList = [...data, ...audios];
-      queryClient.setQueryData(["favorite"], newList);
-    } catch (error) {
-      const errorMessage = catchAsyncError(error);
-      dispatch(upldateNotification({ message: errorMessage, type: "error" }));
-    }
-    setIsFetchingMore(false);
-  };
-
-  const handleOnRefresh = () => {
-    pageNo = 0;
-    setHasMore(true);
-    queryClient.invalidateQueries(["favorite"]);
-  };
 
   return (
     <Container>

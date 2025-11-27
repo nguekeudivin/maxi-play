@@ -45,7 +45,7 @@ export default function ProfileLayout() {
           }}
         />
 
-        {/* <Tabs.Screen
+        <Tabs.Screen
           name="favorites"
           options={{
             title: "Favorites",
@@ -54,7 +54,7 @@ export default function ProfileLayout() {
             ),
           }}
         />
-
+        {/*
         <Tabs.Screen
           name="history"
           options={{

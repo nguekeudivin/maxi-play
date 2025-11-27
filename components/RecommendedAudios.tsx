@@ -18,6 +18,7 @@ const dummyData = new Array(6).fill("");
 
 const RecommendedAudios: FC<Props> = ({ onAudioLongPress, onAudioPress }) => {
   const { data = [], isLoading } = useFetchRecommendedAudios();
+
   const { onGoingAudio } = useSelector(getPlayerState);
   const { isPlaying } = useAudioController();
 

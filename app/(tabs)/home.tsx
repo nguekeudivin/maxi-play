@@ -1,4 +1,4 @@
-// app/home.tsx (ou app/index.tsx si c’est ta page d’accueil)
+// app/home.tsx
 import { AudioData, Playlist } from "@/@types/audio";
 import catchAsyncError from "@/api/catchError";
 import { getClient } from "@/api/client";
@@ -13,21 +13,11 @@ import Screen from "@/components/Screen";
 import { IconSymbol } from "@/components/ui/icon-symbol";
 import { useFetchPlaylist } from "@/hooks/query";
 import useAudioController from "@/hooks/useAudioController";
-import { upldateNotification } from "@/store/notification";
 import colors from "@/utils/colors";
-import { MaterialIcons } from "@expo/vector-icons";
-import { FC, useState } from "react";
+import { useFocusEffect } from "expo-router";
+import { FC, useCallback, useState } from "react";
 import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
-import { Gesture, GestureDetector } from "react-native-gesture-handler";
-import Animated, {
-  useAnimatedStyle,
-  useSharedValue,
-  withSpring,
-  withTiming,
-} from "react-native-reanimated";
-import { useDispatch } from "react-redux";
-
-const REFRESH_THRESHOLD = 130; // pixels à tirer pour déclencher le refresh
+import Toast from "react-native-toast-message";
 
 const Home: FC = () => {
   const [showOptions, setShowOptions] = useState(false);
@@ -37,81 +27,13 @@ const Home: FC = () => {
 
   const { onAudioPress } = useAudioController();
   const { data: playlists = [] } = useFetchPlaylist();
-  const dispatch = useDispatch();
 
-  // Animation du pull-to-refresh
-  const translateY = useSharedValue(0);
-  const rotation = useSharedValue(0);
-  const isRefreshing = useSharedValue(false);
+  useFocusEffect(
+    useCallback(() => {
+      queryClient.refetchQueries({ queryKey: ["recommanded"] });
+    }, [])
+  );
 
-  const triggerRefresh = async () => {
-    if (isRefreshing.value) return;
-    isRefreshing.value = true;
-    rotation.value = withTiming(720, { duration: 900 });
-
-    try {
-      //await queryClient.refetchQueries({ active: true });
-      await queryClient.invalidateQueries({
-        predicate: (query) => {
-          const key = query.queryKey[0];
-          return [
-            "latest-uploads",
-            "recommended-audios",
-            "recommended-playlists",
-            "recently-played",
-            "playlists",
-          ].includes(key as string);
-        },
-      });
-    } catch (error) {
-      dispatch(
-        upldateNotification({ message: "Refresh failed", type: "error" })
-      );
-    } finally {
-      isRefreshing.value = false;
-      translateY.value = withSpring(0);
-      rotation.value = 0;
-    }
-  };
-
-  // Gesture : long press + pan down
-  const longPressAndPan = Gesture.LongPress()
-    .minDuration(400)
-    .onStart(() => {
-      translateY.value = withSpring(80);
-    })
-    .onFinalize(() => {
-      if (translateY.value < REFRESH_THRESHOLD * 0.7) {
-        translateY.value = withSpring(0);
-      }
-    });
-
-  const pan = Gesture.Pan()
-    .onUpdate((e) => {
-      if (e.translationY > 0) {
-        translateY.value = Math.min(e.translationY, REFRESH_THRESHOLD + 60);
-      }
-    })
-    .onEnd(() => {
-      if (translateY.value >= REFRESH_THRESHOLD) {
-        triggerRefresh();
-      } else {
-        translateY.value = withSpring(0);
-      }
-    });
-
-  const gesture = Gesture.Simultaneous(longPressAndPan, pan);
-
-  const spinnerStyle = useAnimatedStyle(() => ({
-    opacity: translateY.value > 50 ? 1 : 0,
-    transform: [{ rotate: `${rotation.value}deg` }],
-  }));
-
-  const contentStyle = useAnimatedStyle(() => ({
-    transform: [{ translateY: translateY.value }],
-  }));
-
-  // Handlers
   const handleOnLongPress = (audio: AudioData) => {
     setSelectedAudio(audio);
     setShowOptions(true);
@@ -132,14 +54,26 @@ const Home: FC = () => {
         title: info.title,
         visibility: info.private ? "private" : "public",
       });
-      dispatch(
-        upldateNotification({ message: "Playlist created!", type: "success" })
-      );
+
+      Toast.show({
+        type: "success",
+        text1: "Playlist created!",
+        text2: `"${info.title}" has been created successfully`,
+        position: "top",
+        visibilityTime: 4000,
+      });
+
       setShowPlaylistForm(false);
       setSelectedAudio(undefined);
     } catch (error) {
       const msg = catchAsyncError(error);
-      dispatch(upldateNotification({ message: msg, type: "error" }));
+      Toast.show({
+        type: "error",
+        text1: "Error",
+        text2: msg,
+        position: "top",
+        visibilityTime: 5000,
+      });
     }
   };
 
@@ -154,105 +88,134 @@ const Home: FC = () => {
         title: playlist.title,
         visibility: playlist.visibility,
       });
-      dispatch(
-        upldateNotification({ message: "Added to playlist!", type: "success" })
-      );
+
+      Toast.show({
+        type: "success",
+        text1: "Added to playlist!",
+        text2: `Track added to "${playlist.title}"`,
+        position: "top",
+        visibilityTime: 4000,
+      });
+
       setShowPlaylistModal(false);
       setSelectedAudio(undefined);
     } catch (error) {
       const msg = catchAsyncError(error);
-      dispatch(upldateNotification({ message: msg, type: "error" }));
+      Toast.show({
+        type: "error",
+        text1: "Failed to add",
+        text2: msg,
+        position: "top",
+        visibilityTime: 5000,
+      });
     }
+  };
+
+  const handleOnFavPress = async () => {
+    if (!selectedAudio) return;
+
+    try {
+      const client = await getClient();
+
+      await client.post("/favorite?audioId=" + selectedAudio.id);
+
+      Toast.show({
+        type: "success",
+        text1: "Added to favorites!",
+        text2: `"${selectedAudio.title}" is now in your favorites`,
+        position: "top",
+        visibilityTime: 4000,
+      });
+    } catch (error) {
+      const errorMessage = catchAsyncError(error);
+      Toast.show({
+        type: "error",
+        text1: "Failed to add to favorites",
+        text2: errorMessage,
+        position: "top",
+        visibilityTime: 5000,
+      });
+    }
+
+    setSelectedAudio(undefined);
+    setShowOptions(false);
   };
 
   return (
     <Screen>
-      <GestureDetector gesture={gesture}>
-        <Animated.View style={[{ flex: 1 }, contentStyle]}>
-          {/* Spinner du refresh */}
-          <Animated.View style={[styles.refreshSpinner, spinnerStyle]}>
-            <MaterialIcons name="refresh" size={36} color={colors.SECONDARY} />
-          </Animated.View>
+      <ScrollView contentContainerStyle={styles.container}>
+        <View style={styles.section}>
+          <RecentlyPlayed />
+        </View>
 
-          <ScrollView contentContainerStyle={styles.container}>
-            <View style={styles.section}>
-              <RecentlyPlayed />
-            </View>
-
-            <View style={styles.section}>
-              <LatestUploads
-                onAudioPress={onAudioPress}
-                onAudioLongPress={handleOnLongPress}
-              />
-            </View>
-
-            <View style={styles.section}>
-              <RecommendedAudios
-                onAudioPress={onAudioPress}
-                onAudioLongPress={handleOnLongPress}
-              />
-            </View>
-            {/* 
-            <View style={styles.section}>
-              <RecommendedPlaylist
-                onListPress={(playlist) => {
-                  dispatch(updateSelectedListId(playlist.id));
-                  dispatch(updatePlaylistVisbility(true));
-                }}
-              />
-            </View> */}
-          </ScrollView>
-
-          {/* Modales */}
-          <OptionsModal
-            visible={showOptions}
-            onRequestClose={() => {
-              setShowOptions(false);
-              setSelectedAudio(undefined);
-            }}
-            options={[
-              {
-                title: "Add to playlist",
-                icon: "playlist-plus",
-                onPress: handleOnAddToPlaylist,
-              },
-            ]}
-            renderItem={(item) => (
-              <Pressable onPress={item.onPress} style={styles.optionItem}>
-                <IconSymbol
-                  name={item.icon as any}
-                  size={24}
-                  color={colors.PRIMARY}
-                />
-                <Text style={styles.optionText}>{item.title}</Text>
-              </Pressable>
-            )}
+        <View style={styles.section}>
+          <LatestUploads
+            onAudioPress={onAudioPress}
+            onAudioLongPress={handleOnLongPress}
           />
+        </View>
 
-          <PlayListModal
-            visible={showPlaylistModal}
-            onRequestClose={() => {
-              setShowPlaylistModal(false);
-              setSelectedAudio(undefined);
-            }}
-            list={playlists}
-            onCreateNewPress={() => {
-              setShowPlaylistModal(false);
-              setShowPlaylistForm(true);
-            }}
-            onPlaylistPress={handleAddToExistingPlaylist}
+        <View style={styles.section}>
+          <RecommendedAudios
+            onAudioPress={onAudioPress}
+            onAudioLongPress={handleOnLongPress}
           />
+        </View>
+      </ScrollView>
 
-          <PlaylistForm
-            visible={showPlaylistForm}
-            onRequestClose={() => {
-              setShowPlaylistForm(false);
-              setSelectedAudio(undefined);
-            }}
-            onSubmit={handlePlaylistSubmit}
-          />
-        </Animated.View>
-      </GestureDetector>
+      {/* Modales */}
+      <OptionsModal
+        visible={showOptions}
+        onRequestClose={() => {
+          setShowOptions(false);
+          setSelectedAudio(undefined);
+        }}
+        options={[
+          {
+            title: "Add to playlist",
+            icon: "playlist-plus",
+            onPress: handleOnAddToPlaylist,
+          },
+          {
+            title: "Add to favorite",
+            icon: "favorite",
+            onPress: handleOnFavPress,
+          },
+        ]}
+        renderItem={(item) => (
+          <Pressable onPress={item.onPress} style={styles.optionItem}>
+            <IconSymbol
+              name={item.icon as any}
+              size={24}
+              color={colors.PRIMARY}
+            />
+            <Text style={styles.optionText}>{item.title}</Text>
+          </Pressable>
+        )}
+      />
+
+      <PlayListModal
+        visible={showPlaylistModal}
+        onRequestClose={() => {
+          setShowPlaylistModal(false);
+          setSelectedAudio(undefined);
+        }}
+        list={playlists}
+        onCreateNewPress={() => {
+          setShowPlaylistModal(false);
+          setShowPlaylistForm(true);
+        }}
+        onPlaylistPress={handleAddToExistingPlaylist}
+      />
+
+      <PlaylistForm
+        visible={showPlaylistForm}
+        onRequestClose={() => {
+          setShowPlaylistForm(false);
+          setSelectedAudio(undefined);
+        }}
+        onSubmit={handlePlaylistSubmit}
+      />
     </Screen>
   );
 };
@@ -261,18 +224,9 @@ const styles = StyleSheet.create({
   container: {
     padding: 12,
     paddingBottom: 100,
-    paddingTop: 0,
   },
   section: {
     marginBottom: 24,
-  },
-  refreshSpinner: {
-    position: "absolute",
-    top: 90,
-    left: 0,
-    right: 0,
-    alignItems: "center",
-    zIndex: 10,
   },
   optionItem: {
     flexDirection: "row",
@@ -289,3 +243,6 @@ const styles = StyleSheet.create({
 });
 
 export default Home;
+function fetchRecommended() {
+  throw new Error("Function not implemented.");
+}
