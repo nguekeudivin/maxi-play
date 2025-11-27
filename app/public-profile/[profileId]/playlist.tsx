@@ -7,13 +7,15 @@ import {
   updatePlaylistVisbility,
   updateSelectedListId,
 } from "@/store/playlistModal";
+import { getCurrentId } from "@/store/profile";
 import PlaylistItem from "@/ui/PlaylistItem";
-import { useLocalSearchParams } from "expo-router";
 import { ScrollView } from "react-native";
-import { useDispatch } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 
 export default function PublicPlaylistTab() {
-  const { profileId } = useLocalSearchParams<{ profileId: string }>();
+  const profileId = useSelector(getCurrentId) as string;
+
+  //const { profileId } = useLocalSearchParams<{ profileId: string }>();
   const { data } = useFetchPublicPlaylist(profileId);
   const dispatch = useDispatch();
 

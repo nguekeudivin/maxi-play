@@ -15,6 +15,7 @@ import { useDispatch, useSelector } from "react-redux";
 
 const useAudioController = () => {
   const dispatch = useDispatch();
+
   const player = useSelector(getPlayerState);
 
   const onPlaybackStatusUpdate = (status: AVPlaybackStatus) => {

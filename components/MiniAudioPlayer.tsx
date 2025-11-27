@@ -2,6 +2,7 @@ import { getClient } from "@/api/client";
 import { useFetchIsFavorite } from "@/hooks/query";
 import useAudioController from "@/hooks/useAudioController";
 import { getPlayerState } from "@/store/player";
+import { setCurrentProfileId } from "@/store/profile";
 import Loader from "@/ui/Loader";
 import PlayPauseBtn from "@/ui/PlayPauseBtn";
 import colors from "@/utils/colors";
@@ -11,7 +12,7 @@ import { useRouter } from "expo-router";
 import { FC, useState } from "react";
 import { Image, Pressable, StyleSheet, Text, View } from "react-native";
 import { useMutation, useQueryClient } from "react-query";
-import { useSelector } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 import AudioPlayer from "./AudioPlayer";
 import CurrentAudioList from "./CurrentAudioList";
 
@@ -22,6 +23,7 @@ const MiniAudioPlayer: FC = () => {
     useSelector(getPlayerState);
   const { togglePlayPause } = useAudioController();
   const router = useRouter();
+  const dispatch = useDispatch();
 
   const [playerVisibility, setPlayerVisibility] = useState(false);
   const [showCurrentList, setShowCurrentList] = useState(false);
@@ -118,6 +120,7 @@ const MiniAudioPlayer: FC = () => {
         onProfileLinkPress={() => {
           setPlayerVisibility(false);
           // navigation ici si besoin
+          dispatch(setCurrentProfileId(onGoingAudio?.owner?.id));
           router.push(`/public-profile/${onGoingAudio?.owner?.id}` as any);
         }}
       />

@@ -26,6 +26,7 @@ const UploadsTab: FC<Props> = (props) => {
   const { onAudioPress } = useAudioController();
   const { navigate } =
     useNavigation<NavigationProp<ProfileNavigatorStackParamList>>();
+  const { isPlaying } = useAudioController();
 
   const handleOnLongPress = (audio: AudioData) => {
     setSelectedAudio(audio);
@@ -53,7 +54,7 @@ const UploadsTab: FC<Props> = (props) => {
               onPress={() => onAudioPress(item, data)}
               key={item.id}
               audio={item}
-              isPlaying={onGoingAudio?.id === item.id}
+              isPlaying={onGoingAudio?.id === item.id && isPlaying}
               onLongPress={() => handleOnLongPress(item)}
             />
           );
