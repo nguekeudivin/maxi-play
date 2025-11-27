@@ -1,8 +1,7 @@
 import { AudioData } from "@/@types/audio";
-import { ProfileNavigatorStackParamList } from "@/@types/navigation";
+import { getClient } from "@/api/client";
 import OptionsModal from "@/components/OptionsModal";
 import Container from "@/components/ui/container";
-import { useFetchUploadsByProfile } from "@/hooks/query";
 import useAudioController from "@/hooks/useAudioController";
 import { getPlayerState } from "@/store/player";
 import AudioListItem from "@/ui/AudioListItem";
@@ -11,8 +10,8 @@ import EmptyRecords from "@/ui/EmptyRecords";
 import OptionSelector from "@/ui/OptionSelector";
 import colors from "@/utils/colors";
 import { MaterialIcons } from "@expo/vector-icons";
-import { NavigationProp, useNavigation } from "@react-navigation/native";
-import { FC, useState } from "react";
+import { useFocusEffect } from "expo-router";
+import { FC, useCallback, useEffect, useState } from "react";
 import { ScrollView, StyleSheet } from "react-native";
 import { useSelector } from "react-redux";
 
@@ -22,11 +21,29 @@ const UploadsTab: FC<Props> = (props) => {
   const [showOptions, setShowOptions] = useState(false);
   const [selectedAudio, setSelectedAudio] = useState<AudioData>();
   const { onGoingAudio } = useSelector(getPlayerState);
-  const { data, isLoading } = useFetchUploadsByProfile();
+  //const { data, isLoading } = useFetchUploadsByProfile();
   const { onAudioPress } = useAudioController();
-  const { navigate } =
-    useNavigation<NavigationProp<ProfileNavigatorStackParamList>>();
   const { isPlaying } = useAudioController();
+
+  const [data, setData] = useState<any[]>();
+  const [isLoading, setIsLoading] = useState<boolean>(false);
+
+  const fetch = async () => {
+    const client = await getClient();
+    const { data } = await client("/profile/uploads");
+    setData(data.audios);
+    //return data.audios;
+  };
+
+  useFocusEffect(
+    useCallback(() => {
+      console.log("uplods profile");
+      fetch();
+    }, [])
+  );
+  useEffect(() => {
+    fetch();
+  }, []);
 
   const handleOnLongPress = (audio: AudioData) => {
     setSelectedAudio(audio);
@@ -35,10 +52,11 @@ const UploadsTab: FC<Props> = (props) => {
 
   const handleOnEditPress = () => {
     setShowOptions(false);
-    if (selectedAudio)
-      navigate("UpdateAudio", {
-        audio: selectedAudio,
-      });
+    if (selectedAudio) {
+      // navigate("UpdateAudio", {
+      //   audio: selectedAudio,
+      // });
+    }
   };
 
   if (isLoading) return <AudioListLoadingUI />;
