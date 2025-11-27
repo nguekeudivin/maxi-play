@@ -23,7 +23,7 @@ import * as yup from "yup";
 interface FileInfo {
   uri: string;
   name: string;
-  type?: string; // mime type
+  type: string;
   size?: number;
 }
 
@@ -45,13 +45,16 @@ const defaultForm: FormFields = {
 
 const commonSchema = {
   title: yup.string().trim().required("Title is missing!"),
-  category: yup.string().oneOf(categories, "Category is missing!"),
+  category: yup
+    .string()
+    .oneOf(categories, "Select a valid category!")
+    .required("Category is missing!"),
   about: yup.string().trim().required("About is missing!"),
 };
 
 const newAudioSchema = yup.object().shape({
   ...commonSchema,
-  file: yup.object().required("Audio file is missing!"),
+  file: yup.object().required("Audio file is required!"),
 });
 
 const updateAudioSchema = yup.object().shape({
@@ -85,7 +88,9 @@ const AudioForm: FC<Props> = ({
     if (initialValues) {
       setAudioInfo((prev) => ({
         ...prev,
-        ...initialValues,
+        title: initialValues.title || "",
+        category: initialValues.category || "",
+        about: initialValues.about || "",
       }));
       setIsForUpdate(true);
     }
@@ -99,17 +104,22 @@ const AudioForm: FC<Props> = ({
       quality: 0.8,
     });
 
-    if (!result.canceled && result.assets[0]) {
-      const asset = result.assets[0];
-      setAudioInfo((prev) => ({
-        ...prev,
-        poster: {
-          uri: asset.uri,
-          name: asset.fileName || "poster.jpg",
-          type: asset.type || "image/jpeg",
-        },
-      }));
-    }
+    if (result.canceled || !result.assets?.[0]) return;
+
+    const asset = result.assets[0];
+
+    const fileName = asset.fileName || `poster_${Date.now()}.jpg`;
+    const fileType =
+      asset.type === "image" ? "image/jpeg" : asset.type || "image/jpeg";
+
+    setAudioInfo((prev) => ({
+      ...prev,
+      poster: {
+        uri: asset.uri,
+        name: fileName,
+        type: fileType,
+      },
+    }));
   };
 
   // Sélection du fichier audio
@@ -120,51 +130,57 @@ const AudioForm: FC<Props> = ({
         copyToCacheDirectory: true,
       });
 
-      if (doc.canceled) return;
+      if (doc.canceled || !doc.assets?.[0]) return;
 
       const file = doc.assets[0];
+
+      const fileName = file.name || `audio_${Date.now()}.mp3`;
+      const fileType = file.mimeType || "audio/mpeg";
+
       setAudioInfo((prev) => ({
         ...prev,
         file: {
           uri: file.uri,
-          name: file.name,
-          type: file.mimeType || "audio/mpeg",
+          name: fileName,
+          type: fileType,
           size: file.size,
         },
       }));
     } catch (err) {
       console.warn("DocumentPicker Error: ", err);
-      Alert.alert("Erreur", "Impossible de sélectionner le fichier audio");
+      Alert.alert("Error", "Unable to select audio file");
     }
   };
 
   const handleSubmit = async () => {
     try {
       const schema = isForUpdate ? updateAudioSchema : newAudioSchema;
-      const validated = await schema.validate(audioInfo, { abortEarly: false });
+      await schema.validate(audioInfo, { abortEarly: false });
 
       const formData = new FormData();
 
-      // Ajout des champs texte
-      formData.append("title", validated.title);
-      formData.append("about", validated.about);
-      formData.append("category", validated.category as any);
+      // Champs texte
+      formData.append("title", audioInfo.title.trim());
+      formData.append("about", audioInfo.about.trim());
+      formData.append("category", audioInfo.category);
 
-      // Ajout du poster s'il existe
+      // Poster (toujours autorisé, même en update)
       if (audioInfo.poster?.uri) {
         formData.append("poster", {
           uri: audioInfo.poster.uri,
           name: audioInfo.poster.name,
-          type: audioInfo.poster.type || "image/jpeg",
+          type: audioInfo.poster.type,
+          fileName: audioInfo.poster.name, // CRITICAL FOR ANDROID
         } as any);
       }
 
-      // Ajout du fichier audio (seulement si création)
+      // Fichier audio (uniquement en création)
       if (!isForUpdate && audioInfo.file?.uri) {
         formData.append("file", {
           uri: audioInfo.file.uri,
           name: audioInfo.file.name,
-          type: audioInfo.file.type || "audio/mpeg",
+          type: audioInfo.file.type,
+          fileName: audioInfo.file.name, // INDISPENSABLE SUR ANDROID
         } as any);
       }
 
@@ -172,81 +188,66 @@ const AudioForm: FC<Props> = ({
         setAudioInfo({ ...defaultForm });
       });
     } catch (error: any) {
-      const msg = error.errors?.[0] || "Une erreur est survenue";
+      const msg = error.errors?.[0] || "An error occurred";
       dispatch(upldateNotification({ message: msg, type: "error" }));
     }
   };
 
   return (
     <ScrollView style={styles.container}>
-      {/* Sélecteurs de fichiers */}
-      <View style={{ marginBottom: 20 }}>
-        <Pressable onPress={pickPoster} style={styles.posterContainer}>
-          {audioInfo.poster?.uri ? (
-            <>
-              {/* Aperçu de l'image */}
-              <Image
-                source={{ uri: audioInfo.poster.uri }}
-                style={styles.posterImage}
-                resizeMode="cover"
-              />
-
-              {/* Badge de validation */}
-              <View style={styles.selectedIndicator}>
-                <Ionicons
-                  name="checkmark-circle"
-                  size={28}
-                  color={colors.PRIMARY}
-                />
-              </View>
-
-              {/* Overlay sombre léger pour le texte (optionnel mais très classe) */}
-              <View style={styles.posterOverlay}>
-                <Ionicons name="camera" size={24} color="white" />
-                <Text style={styles.changePosterText}>Change Poster</Text>
-              </View>
-            </>
-          ) : (
-            /* État vide : icône + texte */
-            <View style={styles.emptyPosterState}>
+      {/* Poster Selector */}
+      <Pressable onPress={pickPoster} style={styles.posterContainer}>
+        {audioInfo.poster?.uri ? (
+          <>
+            <Image
+              source={{ uri: audioInfo.poster.uri }}
+              style={styles.posterImage}
+              resizeMode="cover"
+            />
+            <View style={styles.selectedIndicator}>
               <Ionicons
-                name="image-outline"
-                size={48}
-                color={colors.SECONDARY}
+                name="checkmark-circle"
+                size={28}
+                color={colors.PRIMARY}
               />
-              <Text style={styles.selectorText}>Select Poster</Text>
+            </View>
+            <View style={styles.posterOverlay}>
+              <Ionicons name="camera" size={32} color="white" />
+              <Text style={styles.changePosterText}>Change Poster</Text>
+            </View>
+          </>
+        ) : (
+          <View style={styles.emptyPosterState}>
+            <Ionicons name="image-outline" size={56} color={colors.SECONDARY} />
+            <Text style={styles.selectorText}>Select Poster</Text>
+          </View>
+        )}
+      </Pressable>
+
+      {/* Audio Selector - seulement en création */}
+      {!isForUpdate && (
+        <Pressable onPress={pickAudio} style={styles.audioSelector}>
+          <Ionicons
+            name={audioInfo.file ? "musical-notes" : "musical-notes-outline"}
+            size={40}
+            color={colors.SECONDARY}
+          />
+          <Text style={styles.audioFileName} numberOfLines={2}>
+            {audioInfo.file?.name || "Select Audio File"}
+          </Text>
+          {audioInfo.file && (
+            <View style={styles.selectedIndicatorSmall}>
+              <Ionicons
+                name="checkmark-circle"
+                size={24}
+                color={colors.PRIMARY}
+              />
             </View>
           )}
         </Pressable>
-      </View>
+      )}
 
-      <View style={{ marginBottom: 16 }}>
-        {/* Audio Selector - seulement en création */}
-        {!isForUpdate && (
-          <Pressable onPress={pickAudio} style={[styles.selectorBtn]}>
-            {!audioInfo.file && (
-              <Ionicons
-                name="musical-notes-outline"
-                size={40}
-                color={colors.SECONDARY}
-              />
-            )}
-            <Text style={styles.selectorText}>
-              {audioInfo.file?.name || "Select Audio"}
-            </Text>
-            {audioInfo.file && (
-              <View style={styles.selectedIndicator}>
-                <Ionicons
-                  name="checkmark-circle"
-                  size={24}
-                  color={colors.SECONDARY}
-                />
-              </View>
-            )}
-          </Pressable>
-        )}
-      </View>
-
+      {/* Formulaire */}
       <View style={styles.formContainer}>
         <TextInput
           placeholder="Title"
@@ -261,15 +262,26 @@ const AudioForm: FC<Props> = ({
           style={styles.categorySelector}
         >
           <Text style={styles.categorySelectorTitle}>Category</Text>
-          <Text style={styles.selectedCategory}>
+          <Text
+            style={
+              audioInfo.category
+                ? styles.selectedCategory
+                : styles.placeholderCategory
+            }
+          >
             {audioInfo.category || "Select a category"}
           </Text>
+          <Ionicons
+            name="chevron-down"
+            size={20}
+            color={colors.INACTIVE_CONTRAST}
+          />
         </Pressable>
 
         <TextInput
-          placeholder="About"
+          placeholder="About this audio..."
           placeholderTextColor={colors.INACTIVE_CONTRAST}
-          style={[styles.input, { height: 120, marginTop: 16 }]}
+          style={[styles.input, styles.aboutInput]}
           multiline
           textAlignVertical="top"
           value={audioInfo.about}
@@ -279,24 +291,21 @@ const AudioForm: FC<Props> = ({
         <CategorySelector
           visible={showCategoryModal}
           onRequestClose={() => setShowCategoryModal(false)}
-          title="Category"
+          title="Select Category"
           data={categories}
-          renderItem={(item) => <Text style={styles.category}>{item}</Text>}
+          renderItem={(item) => <Text style={styles.categoryItem}>{item}</Text>}
           onSelect={(item) => {
             setAudioInfo((prev) => ({ ...prev, category: item }));
             setShowCategoryModal(false);
           }}
         />
 
-        {/* <View style={{ marginVertical: 20 }}>
-            {busy && <Progress progress={progress} />}
-          </View> */}
-
         <AppButton
           busy={busy}
-          title={isForUpdate ? "Update" : "Submit"}
+          title={isForUpdate ? "Update Audio" : "Submit Audio"}
           onPress={handleSubmit}
-          borderRadius={7}
+          borderRadius={8}
+          // style={{ marginTop: 20 }}
         />
       </View>
     </ScrollView>
@@ -304,81 +313,116 @@ const AudioForm: FC<Props> = ({
 };
 
 const styles = StyleSheet.create({
-  container: { padding: 10 },
-  // fileSelctorContainer: { marginBottom: 20 },
-  selectorBtn: {
-    borderWidth: 2,
-    borderColor: colors.SECONDARY,
-    borderRadius: 7,
-    padding: 15,
-    alignItems: "center",
-    flex: 1,
-  },
-  selectorIcon: { fontSize: 35, color: colors.SECONDARY },
-  selectorText: { marginTop: 8, color: colors.CONTRAST },
-  formContainer: { marginTop: 10 },
-  input: {
-    borderWidth: 2,
-    borderColor: colors.SECONDARY,
-    borderRadius: 7,
-    padding: 12,
-    fontSize: 18,
-    color: colors.CONTRAST,
-    marginBottom: 15,
-  },
-  categorySelector: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    paddingVertical: 15,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.INACTIVE_CONTRAST,
-  },
-  categorySelectorTitle: { color: colors.CONTRAST, fontSize: 18 },
-  selectedCategory: { color: colors.SECONDARY, fontStyle: "italic" },
-  category: { padding: 15, fontSize: 16 },
-
-  selectedIndicator: {
-    position: "absolute",
-    top: 8,
-    right: 8,
-    backgroundColor: "rgba(0,0,0,0.6)",
-    borderRadius: 15,
-  },
+  container: { padding: 12 },
   posterContainer: {
-    height: 180,
+    height: 200,
     borderRadius: 16,
     overflow: "hidden",
-    backgroundColor: colors.PRIMARY,
+    // backgroundColor: "#1a1a1a",
     borderWidth: 2,
     borderColor: colors.SECONDARY,
     borderStyle: "dashed",
+    marginBottom: 20,
     position: "relative",
   },
-
   posterImage: {
     width: "100%",
     height: "100%",
   },
-
   emptyPosterState: {
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
   },
-
   posterOverlay: {
     ...StyleSheet.absoluteFillObject,
-    backgroundColor: "rgba(0,0,0,0.4)",
+    //backgroundColor: "rgba(0,0,0,0.5)",
     justifyContent: "center",
     alignItems: "center",
-    opacity: 0, // devient visible au hover/tap
+    opacity: 0,
   },
-
   changePosterText: {
     color: "white",
-    marginTop: 8,
+    marginTop: 10,
     fontWeight: "600",
+    fontSize: 16,
+  },
+  selectedIndicator: {
+    position: "absolute",
+    top: 10,
+    right: 10,
+    backgroundColor: "rgba(0,0,0,0.6)",
+    borderRadius: 20,
+    padding: 4,
+  },
+  selectedIndicatorSmall: {
+    position: "absolute",
+    top: 8,
+    right: 8,
+  },
+  audioSelector: {
+    borderWidth: 2,
+    borderColor: colors.SECONDARY,
+    borderRadius: 12,
+    padding: 20,
+    alignItems: "center",
+    marginBottom: 20,
+    position: "relative",
+  },
+  audioFileName: {
+    marginTop: 12,
+    color: colors.CONTRAST,
+    fontSize: 16,
+    textAlign: "center",
+    maxWidth: "90%",
+  },
+  selectorText: {
+    marginTop: 12,
+    color: colors.SECONDARY,
+    fontSize: 16,
+    fontWeight: "500",
+  },
+  formContainer: { marginTop: 10 },
+  input: {
+    borderWidth: 2,
+    borderColor: colors.SECONDARY,
+    borderRadius: 10,
+    padding: 14,
+    fontSize: 17,
+    color: colors.CONTRAST,
+    //backgroundColor: "#111",
+    backgroundColor: colors.PRIMARY,
+  },
+  aboutInput: {
+    height: 120,
+    marginTop: 16,
+    marginBottom: 16,
+    backgroundColor: colors.PRIMARY,
+  },
+  categorySelector: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    paddingVertical: 18,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.INACTIVE_CONTRAST,
+  },
+  categorySelectorTitle: {
+    color: colors.CONTRAST,
+    fontSize: 17,
+  },
+  selectedCategory: {
+    color: colors.CONTRAST,
+    fontSize: 18,
+  },
+  placeholderCategory: {
+    color: colors.INACTIVE_CONTRAST,
+    fontStyle: "italic",
+  },
+  categoryItem: {
+    padding: 16,
+    fontSize: 16,
+    color: colors.PRIMARY,
   },
 });
 

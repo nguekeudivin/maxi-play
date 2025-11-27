@@ -1,7 +1,7 @@
 import BasicModalContainer from "@/ui/BasicModalContainer";
 import colors from "@/utils/colors";
 import { MaterialDesignIcons } from "@react-native-vector-icons/material-design-icons";
-import { useState } from "react";
+import { JSX, useState } from "react";
 import { Pressable, ScrollView, StyleSheet, Text } from "react-native";
 
 interface Props<T> {
