@@ -25,13 +25,23 @@ const Verification: FC = () => {
 
   const dispatch = useDispatch();
   const router = useRouter();
-  const segments = useSegments(); // Pour savoir d'où on vient
+  const segments = useSegments();
   const { userInfo: rawUserInfo } = useLocalSearchParams();
 
-  // Parse userInfo (envoyé via JSON.stringify)
-  const userInfo: UserInfo = rawUserInfo
-    ? JSON.parse(rawUserInfo as string)
-    : null;
+  // Parsing sécurisé avec gestion d'erreur
+  let userInfo: UserInfo | null = null;
+  if (typeof rawUserInfo === "string") {
+    try {
+      userInfo = JSON.parse(rawUserInfo) as UserInfo;
+    } catch (error) {
+      dispatch(
+        upldateNotification({
+          message: "Failed to parse userInfo",
+          type: "error",
+        })
+      );
+    }
+  }
 
   const inputRef = useRef<TextInput>(null);
 
@@ -61,7 +71,23 @@ const Verification: FC = () => {
 
   const handleSubmit = async () => {
     if (!isValidOtp) {
-      dispatch(upldateNotification({ message: "Invalid OTP!", type: "error" }));
+      dispatch(
+        upldateNotification({
+          message: "Please enter the full OTP",
+          type: "error",
+        })
+      );
+      return;
+    }
+
+    if (!userInfo?.id) {
+      dispatch(
+        upldateNotification({
+          message: "Invalid session. Please try again.",
+          type: "error",
+        })
+      );
+      // router.replace("/sign-up");
       return;
     }
 
@@ -72,17 +98,19 @@ const Verification: FC = () => {
         token: otp.join(""),
       });
 
-      dispatch(upldateNotification({ message: data.message, type: "success" }));
+      dispatch(
+        upldateNotification({
+          message: data.message || "Email verified!",
+          type: "success",
+        })
+      );
 
-      // Détermine où rediriger selon l'origine
-      const cameFromProfile = (segments as any).includes("profile");
+      const cameFromProfile = segments.includes("/profile" as never);
 
       if (cameFromProfile) {
-        // On était dans le profil → on retourne simplement en arrière
         router.back();
       } else {
-        // On était dans l'auth → on va vers SignIn ou Home
-        router.replace("/(auth)/sign-in"); // ou "/(tabs)" si tu as un layout tabs
+        router.replace("/sign-in"); // ou "/(tabs)" si tu as un layout principal
       }
     } catch (error) {
       const msg = catchAsyncError(error);
@@ -96,16 +124,17 @@ const Verification: FC = () => {
     inputRef.current?.focus();
   }, [activeOtpIndex]);
 
-  if (!userInfo) {
-    // Sécurité si on arrive ici sans userInfo
-    router.replace("/(auth)/sign-in");
-    return null;
-  }
+  // Si pas de userInfo → on redirige vers l'inscription
+  useEffect(() => {
+    if (!userInfo) {
+      router.push("/sign-up");
+    }
+  }, [userInfo, router]);
 
   return (
     <AuthFormContainer
       heading="Check your email"
-      subHeading="We've sent you a 6-digit code"
+      subHeading={`We sent a 6-digit code to ${userInfo?.email}`}
     >
       <View style={styles.inputContainer}>
         {otpFields.map((_, index) => (
@@ -137,8 +166,8 @@ const Verification: FC = () => {
 
       <View style={styles.linkContainer}>
         <ReVerificationLink
-          linkTitle="Resend OTP"
-          userId={userInfo.id}
+          linkTitle="Didn't receive the code? Resend"
+          userId={userInfo?.id}
           activeAtFirst={false}
         />
       </View>

@@ -1,5 +1,6 @@
 // app/_layout.tsx
 import { queryClient } from "@/api/query-client";
+import AppNotification from "@/components/AppNotification";
 import store from "@/store";
 import colors from "@/utils/colors";
 import { Slot } from "expo-router";
@@ -21,6 +22,7 @@ export default function RootLayout() {
         <SafeAreaProvider>
           {/* ← LE WRAP MAGIQUE QUI RÉSOUT TOUT */}
           <GestureHandlerRootView style={styles.gestureContainer}>
+            <AppNotification />
             <StatusBar style="auto" />
 
             <Slot />

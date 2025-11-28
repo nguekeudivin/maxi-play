@@ -1,4 +1,3 @@
-import { AuthStackParamList } from "@/@types/navigation";
 import catchAsyncError from "@/api/catchError";
 import client from "@/api/client";
 import AuthFormContainer from "@/components/AuthFormContainer";
@@ -8,7 +7,7 @@ import SubmitBtn from "@/components/form/SubmitBtn";
 import { upldateNotification } from "@/store/notification";
 import AppLink from "@/ui/AppLink";
 import PasswordVisibilityIcon from "@/ui/PasswordVisibilityIcon";
-import { NavigationProp, useNavigation } from "@react-navigation/native";
+import { useRouter } from "expo-router";
 import { FormikHelpers } from "formik";
 import { FC, useState } from "react";
 import { StyleSheet, View } from "react-native";
@@ -53,8 +52,8 @@ const initialValues = {
 
 const SignUp: FC<Props> = (props) => {
   const [secureEntry, setSecureEntry] = useState(true);
-  const navigation = useNavigation<NavigationProp<AuthStackParamList>>();
   const dispatch = useDispatch();
+  const router = useRouter();
 
   const togglePasswordView = () => {
     setSecureEntry(!secureEntry);
@@ -70,8 +69,12 @@ const SignUp: FC<Props> = (props) => {
       const { data } = await client.post("/auth/create", {
         ...values,
       });
-
-      navigation.navigate("Verification", { userInfo: data.user });
+      router.push({
+        pathname: "/verification",
+        params: {
+          userInfo: JSON.stringify(data.user),
+        },
+      });
     } catch (error) {
       const errorMessage = catchAsyncError(error);
       dispatch(upldateNotification({ message: errorMessage, type: "error" }));

@@ -4,18 +4,16 @@ import {
 } from "@/store/notification";
 import colors from "@/utils/colors";
 import { FC, useEffect } from "react";
-import { StyleSheet, Text } from "react-native";
-import Animated, {
-  useAnimatedStyle,
-  useSharedValue,
-  withTiming,
-} from "react-native-reanimated";
+import { StyleSheet } from "react-native";
+import { useAnimatedStyle, useSharedValue } from "react-native-reanimated";
+import Toast from "react-native-toast-message";
 import { useDispatch, useSelector } from "react-redux";
 
 interface Props {}
 
 const AppNotification: FC<Props> = (props) => {
   const { message, type } = useSelector(getNotificationState);
+
   const height = useSharedValue(0);
 
   const dispatch = useDispatch();
@@ -37,33 +35,19 @@ const AppNotification: FC<Props> = (props) => {
   }
 
   useEffect(() => {
-    let timeoutId = 0;
-    const performAnimation = () => {
-      height.value = withTiming(45, {
-        duration: 150,
+    if (message) {
+      Toast.show({
+        type: type,
+        text1: "Notification",
+        text2: message,
+        position: "top",
+        visibilityTime: 5000,
       });
-
-      timeoutId = setTimeout(() => {
-        height.value = withTiming(0, {
-          duration: 150,
-        });
-
-        dispatch(upldateNotification({ message: "", type }));
-      }, 3000);
-    };
-
-    if (message) performAnimation();
-
-    return () => {
-      clearTimeout(timeoutId);
-    };
+      dispatch(upldateNotification({ message: "", type: "error" }));
+    }
   }, [message]);
 
-  return (
-    <Animated.View style={[styles.container, { backgroundColor }, heightStyle]}>
-      <Text style={[styles.message, { color: textColor }]}>{message}</Text>
-    </Animated.View>
-  );
+  return null;
 };
 
 const styles = StyleSheet.create({

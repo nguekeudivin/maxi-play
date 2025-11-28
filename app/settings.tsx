@@ -194,7 +194,6 @@ const ProfileSettings: FC = () => {
             ) : (
               <ReVerificationLink linkTitle="Verify now" />
             )}
-            <ReVerificationLink linkTitle="Verify now" />
           </View>
         </View>
 

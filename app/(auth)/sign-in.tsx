@@ -39,8 +39,8 @@ interface SignInUserInfo {
 }
 
 const initialValues = {
-  email: "codec678538351@gmail.com",
-  password: "asdsQKas!dsadsaa",
+  email: "",
+  password: "",
 };
 
 const SignIn: FC<Props> = (props) => {

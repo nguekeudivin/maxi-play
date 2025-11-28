@@ -19,7 +19,7 @@ const ReVerificationLink: FC<Props> = ({
   linkTitle,
   userId,
   time = 60,
-  activeAtFirst = false,
+  activeAtFirst = true,
 }) => {
   const [countDown, setCountDown] = useState(time);
   const [canSendNewOtpRequest, setCanSendNewOtpRequest] =
@@ -41,7 +41,7 @@ const ReVerificationLink: FC<Props> = ({
 
       // Navigation Expo Router vers la page de vérification
       router.push({
-        pathname: "/(auth)/verification" as any,
+        pathname: "/verification" as any,
         params: {
           userInfo: JSON.stringify({
             email: profile?.email || "",
@@ -81,7 +81,7 @@ const ReVerificationLink: FC<Props> = ({
       )}
       <AppLink
         title={linkTitle}
-        route="/verification"
+        //route="/verification"
         onPress={requestForOTP}
         active={canSendNewOtpRequest}
       />
